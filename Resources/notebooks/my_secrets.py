@@ -1,0 +1,2 @@
+
+QUANDL_API_KEY = "JD-hdxFdEv_5Ji53ybSX"
