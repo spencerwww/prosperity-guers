@@ -7,8 +7,8 @@ from ipr import ipr
 from bnh_ipr import bnh_ipr
 from aco import aco
 
-from logger import Logger
-logger = Logger()
+# from logger import Logger
+# logger = Logger()
     
 class Trader:
 
@@ -34,5 +34,5 @@ class Trader:
         traderData = ""  # No state needed - we check position directly
         conversions = 0
 
-        logger.flush(state, result, conversions, traderData)
+        # logger.flush(state, result, conversions, traderData)
         return result, conversions, traderData
