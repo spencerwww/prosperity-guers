@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk NR>=100000 && NR<=100010 *)",
+      "Bash(python analyse_backtest.py backtests/2026-04-17_14-45-30.log)"
+    ]
+  }
+}
