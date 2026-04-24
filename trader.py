@@ -1,279 +1,143 @@
-from datamodel import OrderDepth, UserId, TradingState, Order
-from typing import List
+from datamodel import OrderDepth, UserId, TradingState, Order, Symbol, Trade, Listing, Observation, ProsperityEncoder
+from typing import List, Any
+from logger import logger
+import json
 import numpy as np
 import string
 
-from logger import Logger
-logger = Logger()
+HGP_MU = 9990.806866666666
+HGP_STD = 31.93521376335991
+HGP_N_STD = 2
 
-def bnh_ipr(state: TradingState):
-  product = "INTARIAN_PEPPER_ROOT"
-  order_depth: OrderDepth = state.order_depths[product]
-  orders: List[Order] = []
-  asks = list(order_depth.sell_orders.items())
+class ProductTrader:
 
-  max_pos = 80
-  cur_pos = state.position.get(product, 0)
+    def __init__(self, name, state, prints, new_trader_data, product_group=None):
 
-  if asks:
-        for ask, qty in asks:
-              buy_qty = min(-qty, max_pos - cur_pos)
-              if buy_qty > 0:
-                  orders.append(Order(product, ask, buy_qty))
-                  cur_pos += buy_qty
-  
-  return orders
+        self.orders = []
 
-def vwap(bids, asks):
-    sum_price_volume = 0
-    sum_volume = 0
+        self.name = name
+        self.state = state
+        self.prints = prints
+        self.new_trader_data = new_trader_data
+        self.product_group = name if product_group is None else product_group
 
-    if bids:
-        for bid, qty in bids:
-            sum_price_volume += abs(bid * qty)
-            sum_volume += abs(qty)
+        self.last_traderData = self.get_last_traderData()
+
+        self.position_limit = POS_LIMITS.get(self.name, 0)
+        self.initial_position = self.state.position.get(self.name, 0) # position at beginning of round
+
+        self.expected_position = self.initial_position # update this if you expect a certain change in position e.g. to already hedge
+
+
+        self.mkt_buy_orders, self.mkt_sell_orders = self.get_order_depth()
+        self.bid_wall, self.wall_mid, self.ask_wall = self.get_walls()
+        self.best_bid, self.best_ask = self.get_best_bid_ask()
+
+        self.max_allowed_buy_volume, self.max_allowed_sell_volume = self.get_max_allowed_volume() # gets updated when order created
+        self.total_mkt_buy_volume, self.total_mkt_sell_volume = self.get_total_market_buy_sell_volume()
+
+    def get_last_traderData(self):
+                        
+        last_traderData = {}
+        try:
+            if self.state.traderData != '':
+                last_traderData = json.loads(self.state.traderData)
+        except: self.log("ERROR", 'td')
+
+        return last_traderData
+
+
+    def get_best_bid_ask(self):
+
+        best_bid = best_ask = None
+
+        try:
+            if len(self.mkt_buy_orders) > 0:
+                best_bid = max(self.mkt_buy_orders.keys())
+            if len(self.mkt_sell_orders) > 0:
+                best_ask = min(self.mkt_sell_orders.keys())
+        except: pass
+
+        return best_bid, best_ask
+
+
+    def get_walls(self):
+
+        bid_wall = wall_mid = ask_wall = None
+
+        try: bid_wall = min([x for x,_ in self.mkt_buy_orders.items()])
+        except: pass
         
-    if asks:
-        for ask, qty in asks:
-            sum_price_volume += abs(ask * qty)
-            sum_volume += abs(qty)
+        try: ask_wall = max([x for x,_ in self.mkt_sell_orders.items()])
+        except: pass
 
-    return sum_price_volume / sum_volume
+        try: wall_mid = (bid_wall + ask_wall) / 2
+        except: pass
 
-def ou_aco(state: TradingState):
-    product = "ASH_COATED_OSMIUM"
-    max_pos = 80
-    mu = 10000
-    std = 5.35
-    n_std = 3
-
-    position = state.position.get(product, 0)
-    order_depth: OrderDepth = state.order_depths[product]
-    orders: List[Order] = []
-    bids = list(order_depth.buy_orders.items())
-    asks = list(order_depth.sell_orders.items())
-    if len(bids) == 0 or len(asks) == 0:
-        return orders
+        return bid_wall, wall_mid, ask_wall
     
-    best_bid, best_bid_qty = bids[0]
-    best_ask, best_ask_qty = asks[0]
+    def get_total_market_buy_sell_volume(self):
 
-    mid_price = best_bid + best_ask / 2
+        market_bid_volume = market_ask_volume = 0
 
-    z_t = (mid_price - mu) / std
+        try:
+            market_bid_volume = sum([v for p, v in self.mkt_buy_orders.items()])
+            market_ask_volume = sum([v for p, v in self.mkt_sell_orders.items()])
+        except: pass
 
-    desired_position = -((z_t / n_std) * max_pos)
-    desired_position = max(-max_pos, min(max_pos, desired_position))
-
-    if desired_position > position:
-        if asks:
-            for ask, qty in asks:
-                buy_qty = int(min(-qty, desired_position - position))
-                if buy_qty > 0:
-                    orders.append(Order(product, ask, buy_qty))
-                    position += buy_qty
-
-    if desired_position < position:
-        if bids:
-            for bid, qty in bids:
-                sell_qty = int(min(qty, position - desired_position))
-                if sell_qty > 0:
-                    orders.append(Order(product, bid, -sell_qty))
-                    position -= sell_qty
-    
-    return orders
-
-def bnh_aco(state: TradingState):
-    product = "ASH_COATED_OSMIUM"
-    order_depth: OrderDepth = state.order_depths[product]
-    orders: List[Order] = []
-    asks = list(order_depth.sell_orders.items())
-
-    max_pos = 80
-    cur_pos = state.position.get(product, 0)
-
-    if asks:
-            for ask, qty in asks:
-                buy_qty = min(-qty, max_pos - cur_pos)
-                if buy_qty > 0:
-                    orders.append(Order(product, ask, buy_qty))
-                    cur_pos += buy_qty
-    
-    return orders
-
-def aco(state: TradingState):
-    product = "ASH_COATED_OSMIUM"
-    max_pos = 80
-
-    position = state.position.get(product, 0)
-    order_depth: OrderDepth = state.order_depths[product]
-    orders: List[Order] = []
-    bids = list(order_depth.buy_orders.items())
-    asks = list(order_depth.sell_orders.items())
-
-    true_price = 10000
-    std = 5.35
-    n_std = 0.6
-    upper_band = true_price + (n_std * std)
-    lower_band = true_price - (n_std * std)
-
-    # Making
-    if bids and asks:
-        best_bid = list(order_depth.buy_orders.keys())[0]
-        best_ask = list(order_depth.sell_orders.keys())[0]
-        
-        my_bid = best_bid + 1
-        my_ask = best_ask - 1
-
-        remaining_bid_capacity = max_pos - position
-        remaining_ask_capacity = max_pos + position
-
-        if my_bid < position and remaining_bid_capacity > 0:
-            orders.append(Order(product, my_bid, remaining_bid_capacity))
-
-        if my_ask > position and remaining_ask_capacity > 0:
-            orders.append(Order(product, my_ask, -remaining_ask_capacity))
-
-    if position > 0:
-        for bid, qty in bids:
-            if bid >= true_price:
-                sell_qty = min(qty, max_pos + position)
-                if sell_qty > 0:
-                        orders.append(Order(product, bid, -sell_qty))
-                        position -= sell_qty
-    if position < 0:
-        for ask, qty in asks:
-            if ask <= true_price:
-                    buy_qty = min(-qty, max_pos - position)
-                    if buy_qty > 0:
-                        orders.append(Order(product, ask, buy_qty))
-                        position += buy_qty
-
-    for bid, qty in bids:
-        if bid >= upper_band:
-            sell_qty = min(qty, max_pos + position)
-            if sell_qty > 0:
-                    orders.append(Order(product, bid, -sell_qty))
-                    position -= sell_qty
-
-    for ask, qty in asks:
-        if ask <= lower_band:
-                buy_qty = min(-qty, max_pos - position)
-                if buy_qty > 0:
-                    orders.append(Order(product, ask, buy_qty))
-                    position += buy_qty
-
-    return orders
-
-def mm_aco(state: TradingState):
-    product = "ASH_COATED_OSMIUM"
-    max_pos = 80
-
-    position = state.position.get(product, 0)
-    order_depth: OrderDepth = state.order_depths[product]
-    orders: List[Order] = []
-    bids = list(order_depth.buy_orders.items())
-    asks = list(order_depth.sell_orders.items())
-
-    wall_mid = 10000
-
-    cur_pos = position
-
+        return market_bid_volume, market_ask_volume
     
 
-    # Taking
-    if bids:
-        for bid, qty in bids:
-            if int(bid) > wall_mid:
-                sell_qty = min(qty, max_pos + cur_pos)
-                if sell_qty > 0:
-                    orders.append(Order(product, bid, -sell_qty))
-                    cur_pos -= sell_qty
+    def get_max_allowed_volume(self):
+        max_allowed_buy_volume = self.position_limit - self.initial_position
+        max_allowed_sell_volume = self.position_limit + self.initial_position
+        return max_allowed_buy_volume, max_allowed_sell_volume
 
-    if asks:
-        for ask, qty in asks:
-            if int(ask) < wall_mid:
-                buy_qty = min(-qty, max_pos - cur_pos)
-                if buy_qty > 0:
-                    orders.append(Order(product, ask, buy_qty))
-                    cur_pos += buy_qty
+    def get_order_depth(self):
 
-    # Flatten
-    if bids and cur_pos > 0:
-        for bid, qty in bids:
-            if int(bid) == wall_mid:
-                sell_qty = min(qty, cur_pos)
-                if sell_qty > 0:
-                    orders.append(Order(product, bid, -sell_qty))
-                    cur_pos -= sell_qty
+        order_depth, buy_orders, sell_orders = {}, {}, {}
 
-    if asks and cur_pos < 0:
-        for ask, qty in asks:
-            if int(ask) == wall_mid:
-                buy_qty = min(-qty, -cur_pos)
-                if buy_qty > 0:
-                    orders.append(Order(product, ask, buy_qty))
-                    cur_pos += buy_qty
+        try: order_depth: OrderDepth = self.state.order_depths[self.name]
+        except: pass
+        try: buy_orders = {bp: abs(bv) for bp, bv in sorted(order_depth.buy_orders.items(), key=lambda x: x[0], reverse=True)}
+        except: pass
+        try: sell_orders = {sp: abs(sv) for sp, sv in sorted(order_depth.sell_orders.items(), key=lambda x: x[0])}
+        except: pass
+
+        return buy_orders, sell_orders
     
-    # Making
-    if bids and asks:
-        best_bid = list(order_depth.buy_orders.keys())[0]
-        best_ask = list(order_depth.sell_orders.keys())[0]
-        
-        my_bid = best_bid + 1
-        my_ask = best_ask - 1
 
-        remaining_bid_capacity = max_pos - cur_pos
-        remaining_ask_capacity = max_pos + cur_pos
+    def bid(self, price, volume, logging=True):
+        abs_volume = min(abs(int(volume)), self.max_allowed_buy_volume)
+        order = Order(self.name, int(price), abs_volume)
+        if logging: self.log("BUYO", {"p":price, "s":self.name, "v":int(volume)}, product_group='ORDERS')
+        self.max_allowed_buy_volume -= abs_volume
+        self.orders.append(order)
 
-        if my_bid < wall_mid and remaining_bid_capacity > 0:
-            orders.append(Order(product, my_bid, remaining_bid_capacity))
+    def ask(self, price, volume, logging=True):
+        abs_volume = min(abs(int(volume)), self.max_allowed_sell_volume)
+        order = Order(self.name, int(price), -abs_volume)
+        if logging: self.log("SELLO", {"p":price, "s":self.name, "v":int(volume)}, product_group='ORDERS')
+        self.max_allowed_sell_volume -= abs_volume
+        self.orders.append(order)
 
-        if my_ask > wall_mid and remaining_ask_capacity > 0:
-            orders.append(Order(product, my_ask, -remaining_ask_capacity))
+    def get_orders(self):
+        # overwrite this in each trader
+        return {}
 
-    return orders
+class HGPTrader(ProductTrader):
+    def __init__(self, state, prints, new_trader_data):
+        super().__init__("HYDROGEL_PACK", state, prints, new_trader_data)
 
-def bnh_tomatoes(state: TradingState):
-    product = "TOMATOES"
-    order_depth: OrderDepth = state.order_depths[product]
-    orders: List[Order] = []
-    asks = list(order_depth.sell_orders.items())
+    def get_orders(self):
+        if self.wall_mid is not None:
+            for sp, sv
 
-    max_pos = 80
-    cur_pos = state.position.get(product, 0)
-
-    if asks:
-            for ask, qty in asks:
-                buy_qty = min(-qty, max_pos - cur_pos)
-                if buy_qty > 0:
-                    orders.append(Order(product, ask, buy_qty))
-                    cur_pos += buy_qty
-    
-    return orders
-
-def bnh_emeralds(state: TradingState):
-    product = "EMERALDS"
-    order_depth: OrderDepth = state.order_depths[product]
-    orders: List[Order] = []
-    asks = list(order_depth.sell_orders.items())
-
-    max_pos = 80
-    cur_pos = state.position.get(product, 0)
-
-    if asks:
-            for ask, qty in asks:
-                buy_qty = min(-qty, max_pos - cur_pos)
-                if buy_qty > 0:
-                    orders.append(Order(product, ask, buy_qty))
-                    cur_pos += buy_qty
-    
-    return orders
     
 class Trader:
 
     def bid(self):
-        return 15
+        return 3000
     
     def run(self, state: TradingState):
         """Only method required. It takes all buy and sell orders for all
