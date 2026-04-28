@@ -5,7 +5,26 @@
       "Bash(python analyse_backtest.py backtests/2026-04-17_14-45-30.log)",
       "Bash(python3 *)",
       "Bash(python -c \"import streamlit, plotly; print\\('OK'\\)\")",
-      "Bash(streamlit run *)"
+      "Bash(streamlit run *)",
+      "Bash(git -C \"C:/Users/spenc/OneDrive/Desktop/Projects/Prosperity\" log --oneline --all -- backtests/)",
+      "Bash(git -C \"C:/Users/spenc/OneDrive/Desktop/Projects/Prosperity\" show HEAD:backtests/2026-04-08_22-03-47.log)",
+      "Bash(awk '/Activities log:/{flag=1;next} /^\\\\[/{flag=0} flag')",
+      "Bash(python -c \"import plotly; print\\(plotly.__version__\\)\")",
+      "Bash(python -c \"import matplotlib; print\\(matplotlib.__version__\\)\")",
+      "Bash(git show *)",
+      "Read(//tmp/**)",
+      "Bash(python visualise_backtest.py /tmp/sample_backtest.log)",
+      "Bash(python *)",
+      "Bash(pip show *)",
+      "Bash(prosperity4btx --help)",
+      "Bash(pip index *)",
+      "Bash(awk -F';' 'NR>1{print $3}' ROUND_4/prices_round_4_day_1.csv)",
+      "Bash(awk -F';' 'NR>1{print $4}' ROUND_4/trades_round_4_day_1.csv)",
+      "Bash(awk -F';' 'NR>1{print $2}' ROUND_4/trades_round_4_day_1.csv)",
+      "Bash(awk -F';' 'NR>1{print $7}' ROUND_4/trades_round_4_day_1.csv ROUND_4/trades_round_4_day_2.csv ROUND_4/trades_round_4_day_3.csv)",
+      "Bash(awk 'NR==1{min=$1} {max=$1} END{print \"qty range:\",min,\"to\",max}')",
+      "Bash(awk -F';' 'NR>1 && $4==\"HYDROGEL_PACK\" && \\($2==\"Mark 14\" || $3==\"Mark 14\"\\)' ROUND_4/trades_round_4_day_1.csv ROUND_4/trades_round_4_day_2.csv ROUND_4/trades_round_4_day_3.csv)",
+      "Bash(awk -F';' 'NR>1 && $4==\"HYDROGEL_PACK\"{print $2; print $3}' ROUND_4/trades_round_4_day_1.csv ROUND_4/trades_round_4_day_2.csv ROUND_4/trades_round_4_day_3.csv)"
     ]
   }
 }

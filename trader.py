@@ -1,143 +1,307 @@
 from datamodel import OrderDepth, UserId, TradingState, Order, Symbol, Trade, Listing, Observation, ProsperityEncoder
 from typing import List, Any
-from logger import logger
 import json
 import numpy as np
 import string
 
-HGP_MU = 9990.806866666666
-HGP_STD = 31.93521376335991
-HGP_N_STD = 2
+from datamodel import Listing, Observation, Order, OrderDepth, ProsperityEncoder, Symbol, Trade, TradingState
 
-class ProductTrader:
+class Logger:
+    def __init__(self) -> None:
+        self.logs = ""
+        self.max_log_length = 3750
 
-    def __init__(self, name, state, prints, new_trader_data, product_group=None):
+    def print(self, *objects: Any, sep: str = " ", end: str = "\n") -> None:
+        self.logs += sep.join(map(str, objects)) + end
 
-        self.orders = []
+    def flush(self, state: TradingState, orders: dict[Symbol, list[Order]], conversions: int, trader_data: str) -> None:
+        base_length = len(
+            self.to_json(
+                [
+                    self.compress_state(state, ""),
+                    self.compress_orders(orders),
+                    conversions,
+                    "",
+                    "",
+                ]
+            )
+        )
 
-        self.name = name
-        self.state = state
-        self.prints = prints
-        self.new_trader_data = new_trader_data
-        self.product_group = name if product_group is None else product_group
+        # We truncate state.traderData, trader_data, and self.logs to the same max. length to fit the log limit
+        max_item_length = (self.max_log_length - base_length) // 3
 
-        self.last_traderData = self.get_last_traderData()
+        print(
+            self.to_json(
+                [
+                    self.compress_state(state, self.truncate(state.traderData, max_item_length)),
+                    self.compress_orders(orders),
+                    conversions,
+                    self.truncate(trader_data, max_item_length),
+                    self.truncate(self.logs, max_item_length),
+                ]
+            )
+        )
 
-        self.position_limit = POS_LIMITS.get(self.name, 0)
-        self.initial_position = self.state.position.get(self.name, 0) # position at beginning of round
+        self.logs = ""
 
-        self.expected_position = self.initial_position # update this if you expect a certain change in position e.g. to already hedge
+    def compress_state(self, state: TradingState, trader_data: str) -> list[Any]:
+        return [
+            state.timestamp,
+            trader_data,
+            self.compress_listings(state.listings),
+            self.compress_order_depths(state.order_depths),
+            self.compress_trades(state.own_trades),
+            self.compress_trades(state.market_trades),
+            state.position,
+            self.compress_observations(state.observations),
+        ]
 
+    def compress_listings(self, listings: dict[Symbol, Listing]) -> list[list[Any]]:
+        compressed = []
+        for listing in listings.values():
+            compressed.append([listing.symbol, listing.product, listing.denomination])
 
-        self.mkt_buy_orders, self.mkt_sell_orders = self.get_order_depth()
-        self.bid_wall, self.wall_mid, self.ask_wall = self.get_walls()
-        self.best_bid, self.best_ask = self.get_best_bid_ask()
+        return compressed
 
-        self.max_allowed_buy_volume, self.max_allowed_sell_volume = self.get_max_allowed_volume() # gets updated when order created
-        self.total_mkt_buy_volume, self.total_mkt_sell_volume = self.get_total_market_buy_sell_volume()
+    def compress_order_depths(self, order_depths: dict[Symbol, OrderDepth]) -> dict[Symbol, list[Any]]:
+        compressed = {}
+        for symbol, order_depth in order_depths.items():
+            compressed[symbol] = [order_depth.buy_orders, order_depth.sell_orders]
 
-    def get_last_traderData(self):
-                        
-        last_traderData = {}
-        try:
-            if self.state.traderData != '':
-                last_traderData = json.loads(self.state.traderData)
-        except: self.log("ERROR", 'td')
+        return compressed
 
-        return last_traderData
+    def compress_trades(self, trades: dict[Symbol, list[Trade]]) -> list[list[Any]]:
+        compressed = []
+        for arr in trades.values():
+            for trade in arr:
+                compressed.append(
+                    [
+                        trade.symbol,
+                        trade.price,
+                        trade.quantity,
+                        trade.buyer,
+                        trade.seller,
+                        trade.timestamp,
+                    ]
+                )
 
+        return compressed
 
-    def get_best_bid_ask(self):
+    def compress_observations(self, observations: Observation) -> list[Any]:
+        conversion_observations = {}
+        for product, observation in observations.conversionObservations.items():
+            conversion_observations[product] = [
+                observation.bidPrice,
+                observation.askPrice,
+                observation.transportFees,
+                observation.exportTariff,
+                observation.importTariff,
+                observation.sugarPrice,
+                observation.sunlightIndex,
+            ]
 
-        best_bid = best_ask = None
+        return [observations.plainValueObservations, conversion_observations]
 
-        try:
-            if len(self.mkt_buy_orders) > 0:
-                best_bid = max(self.mkt_buy_orders.keys())
-            if len(self.mkt_sell_orders) > 0:
-                best_ask = min(self.mkt_sell_orders.keys())
-        except: pass
+    def compress_orders(self, orders: dict[Symbol, list[Order]]) -> list[list[Any]]:
+        compressed = []
+        for arr in orders.values():
+            for order in arr:
+                compressed.append([order.symbol, order.price, order.quantity])
 
-        return best_bid, best_ask
+        return compressed
 
+    def to_json(self, value: Any) -> str:
+        return json.dumps(value, cls=ProsperityEncoder, separators=(",", ":"))
 
-    def get_walls(self):
+    def truncate(self, value: str, max_length: int) -> str:
+        lo, hi = 0, min(len(value), max_length)
+        out = ""
 
-        bid_wall = wall_mid = ask_wall = None
+        while lo <= hi:
+            mid = (lo + hi) // 2
 
-        try: bid_wall = min([x for x,_ in self.mkt_buy_orders.items()])
-        except: pass
-        
-        try: ask_wall = max([x for x,_ in self.mkt_sell_orders.items()])
-        except: pass
+            candidate = value[:mid]
+            if len(candidate) < len(value):
+                candidate += "..."
 
-        try: wall_mid = (bid_wall + ask_wall) / 2
-        except: pass
+            encoded_candidate = json.dumps(candidate)
 
-        return bid_wall, wall_mid, ask_wall
+            if len(encoded_candidate) <= max_length:
+                out = candidate
+                lo = mid + 1
+            else:
+                hi = mid - 1
+
+        return out
+
+logger = Logger()
+
+MEAN_REVERTING_MU = 9993.73125
+MEAN_REVERTING_STD = 32.58828333685041
+MEAN_REVERTING_N_STD = 1.55
+MEAN_REVERTING_UPPER_BAND = MEAN_REVERTING_MU + MEAN_REVERTING_N_STD * MEAN_REVERTING_STD
+MEAN_REVERTING_LOWER_BAND = MEAN_REVERTING_MU - MEAN_REVERTING_N_STD * MEAN_REVERTING_STD
+
+VEV_MU = 5247.3641
+VEV_STD = 17.090768957235134
+VEV_N_STD = 1.4
+VEV_UPPER_BAND = VEV_MU + VEV_N_STD * VEV_STD
+VEV_LOWER_BAND = VEV_MU - VEV_N_STD * VEV_STD
+
+VEV_4000_MU = 1247.3734375
+VEV_4000_STD = 17.11391131017711
+
+VEV_4500_MU = 747.3729625
+VEV_4500_STD = 17.104593517578255
+
+VEV_5000_MU = 251.6733125
+VEV_5000_STD = 16.381335880552594
+
+VEV_5100_MU = 162.6744
+VEV_5100_STD = 15.326695903885419
+
+VEV_5200_MU = 91.1128375
+VEV_5200_STD = 12.796427437471563
+
+VEV_5300_MU = 43.10535
+VEV_5300_STD = 8.97591655790384
+
+VEV_5400_MU = 14.08915
+VEV_5400_STD = 4.608139065950911
+
+VEV_5500_MU = 5.545575
+VEV_5500_STD = 2.4769969332281416
+
+def hgp(state: TradingState):
+    product = "HYDROGEL_PACK"
+    max_pos = 200
+
+    position = state.position.get(product, 0)
+    order_depth: OrderDepth = state.order_depths[product]
+    orders: List[Order] = []
+    market_trades = state.market_trades.get(product, [])
+    trader_name = "Mark 14"
+    bids = list(order_depth.buy_orders.items())
+    asks = list(order_depth.sell_orders.items())
+    best_bid = list(order_depth.buy_orders.keys())[0]
+    best_ask = list(order_depth.sell_orders.keys())[0]
     
-    def get_total_market_buy_sell_volume(self):
 
-        market_bid_volume = market_ask_volume = 0
+    wall_bid, wall_bid_qty = max(bids, key=lambda x: x[1])
+    wall_ask, wall_ask_qty = max(asks, key=lambda x: x[1])
 
-        try:
-            market_bid_volume = sum([v for p, v in self.mkt_buy_orders.items()])
-            market_ask_volume = sum([v for p, v in self.mkt_sell_orders.items()])
-        except: pass
+    wall_mid = int((wall_bid + wall_ask) / 2)
 
-        return market_bid_volume, market_ask_volume
-    
 
-    def get_max_allowed_volume(self):
-        max_allowed_buy_volume = self.position_limit - self.initial_position
-        max_allowed_sell_volume = self.position_limit + self.initial_position
-        return max_allowed_buy_volume, max_allowed_sell_volume
+    if wall_mid is not None:
 
-    def get_order_depth(self):
+        # if position > 0:
+        #     if wall_mid > 9985 and wall_mid < 9995:
+        #         for bp, bv in bids:
+        #             orders.append(Order(product, bp, -bv))
+        #             break
 
-        order_depth, buy_orders, sell_orders = {}, {}, {}
+        # if position < 0:
+        #     if wall_mid > 9985 and wall_mid < 9995:
+        #         for sp, sv in asks:
+        #             orders.append(Order(product, sp, -sv))
+        #             break
+                
+            ##########################################################
+            ####### 1. TAKING
+            ##########################################################
 
-        try: order_depth: OrderDepth = self.state.order_depths[self.name]
-        except: pass
-        try: buy_orders = {bp: abs(bv) for bp, bv in sorted(order_depth.buy_orders.items(), key=lambda x: x[0], reverse=True)}
-        except: pass
-        try: sell_orders = {sp: abs(sv) for sp, sv in sorted(order_depth.sell_orders.items(), key=lambda x: x[0])}
-        except: pass
+        for trade in market_trades:
+            if trade.buyer == trader_name:
+                orders.append(Order(product, best_bid + 1, trade.quantity))
+                position += trade.quantity
+            if trade.seller == trader_name:
+                orders.append(Order(product, best_ask - 1, trade.quantity))
+                position -= trade.quantity
 
-        return buy_orders, sell_orders
-    
+        for sp, sv in asks:
+            if wall_mid <= MEAN_REVERTING_LOWER_BAND:
+                orders.append(Order(product, sp, -sv))
+                position -= sv
+                break
 
-    def bid(self, price, volume, logging=True):
-        abs_volume = min(abs(int(volume)), self.max_allowed_buy_volume)
-        order = Order(self.name, int(price), abs_volume)
-        if logging: self.log("BUYO", {"p":price, "s":self.name, "v":int(volume)}, product_group='ORDERS')
-        self.max_allowed_buy_volume -= abs_volume
-        self.orders.append(order)
+        for bp, bv in bids:
+            if wall_mid >= MEAN_REVERTING_UPPER_BAND:
+                orders.append(Order(product, bp, -bv))
+                position -= bv
+                break
 
-    def ask(self, price, volume, logging=True):
-        abs_volume = min(abs(int(volume)), self.max_allowed_sell_volume)
-        order = Order(self.name, int(price), -abs_volume)
-        if logging: self.log("SELLO", {"p":price, "s":self.name, "v":int(volume)}, product_group='ORDERS')
-        self.max_allowed_sell_volume -= abs_volume
-        self.orders.append(order)
+        if wall_mid <= MEAN_REVERTING_LOWER_BAND:
+            orders.append(Order(product, best_bid + 1, max_pos - position))
+        elif wall_mid >= MEAN_REVERTING_UPPER_BAND:
+            orders.append(Order(product, best_ask - 1, -max_pos - position))
 
-    def get_orders(self):
-        # overwrite this in each trader
-        return {}
+    return orders
 
-class HGPTrader(ProductTrader):
-    def __init__(self, state, prints, new_trader_data):
-        super().__init__("HYDROGEL_PACK", state, prints, new_trader_data)
+def underlying(max_pos, product, mean, std, n_std, state: TradingState):
+    upper_band = mean + n_std * std
+    lower_band = mean - n_std * std
 
-    def get_orders(self):
-        if self.wall_mid is not None:
-            for sp, sv
+    position = state.position.get(product, 0)
+    order_depth: OrderDepth = state.order_depths[product]
+    orders: List[Order] = []
+    market_trades = state.market_trades.get(product, [])
+    bids = list(order_depth.buy_orders.items())
+    asks = list(order_depth.sell_orders.items())
+    best_bid = list(order_depth.buy_orders.keys())[0]
+    best_ask = list(order_depth.sell_orders.keys())[0]
+
+    wall_bid, wall_bid_qty = max(bids, key=lambda x: x[1])
+    wall_ask, wall_ask_qty = max(asks, key=lambda x: x[1])
+
+    wall_mid = int((wall_bid + wall_ask) / 2)
+
+
+    if wall_mid is not None:
+
+        # if position > 0:
+        #     if wall_mid > 9985 and wall_mid < 9995:
+        #         for bp, bv in bids:
+        #             orders.append(Order(product, bp, -bv))
+        #             break
+
+        # if position < 0:
+        #     if wall_mid > 9985 and wall_mid < 9995:
+        #         for sp, sv in asks:
+        #             orders.append(Order(product, sp, -sv))
+        #             break
+
+        # for trade in market_trades:
+        #     if trade.buyer == trader_name:
+        #         orders.append(Order(product, best_bid + 1, trade.quantity))
+        #         position += trade.quantity
+        #     if trade.seller == trader_name:
+        #         orders.append(Order(product, best_ask - 1, trade.quantity))
+        #         position -= trade.quantity
+                
+            ##########################################################
+            ####### 1. TAKING
+            ##########################################################
+        for sp, sv in asks:
+            if wall_mid <= lower_band:
+                orders.append(Order(product, sp, -sv))
+                break
+
+        for bp, bv in bids:
+            if wall_mid >= upper_band:
+                orders.append(Order(product, bp, -bv))
+                break
+
+        # if wall_mid <= MEAN_REVERTING_LOWER_BAND:
+        #     orders.append(Order(product, best_bid + 1, max_pos - position))
+        # elif wall_mid >= MEAN_REVERTING_UPPER_BAND:
+        #     orders.append(Order(product, best_ask - 1, -max_pos - position))
+
+    return orders
+
 
     
 class Trader:
-
-    def bid(self):
-        return 3000
     
     def run(self, state: TradingState):
         """Only method required. It takes all buy and sell orders for all
@@ -146,15 +310,29 @@ class Trader:
         print("traderData: " + state.traderData)
         print("Observations: " + str(state.observations))
 
-        # Orders to be placed on exchange matching engine
         result = {}
         for product in state.order_depths:
             match product:
-                case "INTARIAN_PEPPER_ROOT":
-                    result[product] = bnh_ipr(state)
-                case "ASH_COATED_OSMIUM":
-                    result[product] = mm_aco(state)
-    
+                case "HYDROGEL_PACK":
+                    result[product] = hgp(state)
+                case "VELVETFRUIT_EXTRACT":
+                    result[product] = underlying(200, product, VEV_MU, VEV_STD, VEV_N_STD, state)
+                case "VEV_4000":
+                    result[product] = underlying(300, product, VEV_4000_MU, VEV_4000_STD, VEV_N_STD, state)
+                case "VEV_4500":
+                    result[product] = underlying(300, product, VEV_4500_MU, VEV_4500_STD, VEV_N_STD, state)
+                case "VEV_5000":
+                    result[product] = underlying(300, product, VEV_5000_MU, VEV_5000_STD, VEV_N_STD, state)
+                case "VEV_5100":
+                    result[product] = underlying(300, product, VEV_5100_MU, VEV_5100_STD, VEV_N_STD, state)
+                case "VEV_5200":
+                    result[product] = underlying(300, product, VEV_5200_MU, VEV_5200_STD, VEV_N_STD, state)
+                case "VEV_5300":
+                    result[product] = underlying(300, product, VEV_5300_MU, VEV_5300_STD, VEV_N_STD, state)
+                case "VEV_5400":
+                    result[product] = underlying(300, product, VEV_5400_MU, VEV_5400_STD, VEV_N_STD, state)
+                case "VEV_5500":
+                    result[product] = underlying(300, product, VEV_5500_MU, VEV_5500_STD, VEV_N_STD, state)
         traderData = ""  # No state needed - we check position directly
         conversions = 0
 
