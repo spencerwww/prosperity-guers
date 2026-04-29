@@ -24,7 +24,12 @@
       "Bash(awk -F';' 'NR>1{print $7}' ROUND_4/trades_round_4_day_1.csv ROUND_4/trades_round_4_day_2.csv ROUND_4/trades_round_4_day_3.csv)",
       "Bash(awk 'NR==1{min=$1} {max=$1} END{print \"qty range:\",min,\"to\",max}')",
       "Bash(awk -F';' 'NR>1 && $4==\"HYDROGEL_PACK\" && \\($2==\"Mark 14\" || $3==\"Mark 14\"\\)' ROUND_4/trades_round_4_day_1.csv ROUND_4/trades_round_4_day_2.csv ROUND_4/trades_round_4_day_3.csv)",
-      "Bash(awk -F';' 'NR>1 && $4==\"HYDROGEL_PACK\"{print $2; print $3}' ROUND_4/trades_round_4_day_1.csv ROUND_4/trades_round_4_day_2.csv ROUND_4/trades_round_4_day_3.csv)"
+      "Bash(awk -F';' 'NR>1 && $4==\"HYDROGEL_PACK\"{print $2; print $3}' ROUND_4/trades_round_4_day_1.csv ROUND_4/trades_round_4_day_2.csv ROUND_4/trades_round_4_day_3.csv)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit *)",
+      "Bash(git diff *)",
+      "Bash(echo \"EXIT_CODE=$?\")"
     ]
   }
 }

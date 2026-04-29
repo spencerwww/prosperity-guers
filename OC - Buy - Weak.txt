@@ -1,0 +1,26 @@
+OC - Buy - Weak
+Possible major supply decrease while demand stays the same, or possibly increase due to effectiveness
+
+PC - Sell - Strong
+Structural change in system, decreased demand
+
+TC - Buy - Strong
+Strong earnings, growth forecast
+
+LC - Sell - Strong
+Release of strongly negative information, major sell offs, decrease in demand
+
+MI - Sell - Weak
+Positive release, but post merger returns are often negative
+
+SP - Hold - Weak
+Purely speculative, could cause possible short term gain
+
+AP - Sell - Weak
+Public outcry, possible decrease in short term demand, but structurally the same long term
+
+VI - Hold - Weak
+Purely speculative, could cause possible short term gain
+
+SR - Buy - Weak
+Sulfur Ltd stock is to be bought as funds adjust their holdings, however no direct impact on SR
