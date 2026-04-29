@@ -379,6 +379,87 @@ def build_summary_figure(
     return fig
 
 
+def write_tabbed_html(
+    figures: dict[str, go.Figure],
+    output_path: str,
+    title: str,
+) -> None:
+    """Write one HTML file with a top tab strip; clicking a tab swaps which
+    Plotly figure div is visible. Plotly.js is loaded once via CDN.
+    """
+    tab_buttons = []
+    tab_pages = []
+    for i, (label, fig) in enumerate(figures.items()):
+        active = " active" if i == 0 else ""
+        display = "block" if i == 0 else "none"
+        tab_buttons.append(
+            f'<button class="tab-button{active}" data-tab="tab-{i}" '
+            f'onclick="showTab({i})">{label}</button>'
+        )
+        # include_plotlyjs=False so the script is loaded once at the top.
+        fig_div = fig.to_html(
+            full_html=False,
+            include_plotlyjs=False,
+            div_id=f"plot-{i}",
+        )
+        tab_pages.append(
+            f'<div class="tab-page" id="tab-{i}" style="display:{display};">'
+            f'{fig_div}</div>'
+        )
+
+    css = """
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+           margin: 0; padding: 0; background: #fafafa; color: #222; }
+    .tab-strip { display: flex; gap: 4px; padding: 8px 12px; background: #fff;
+                 border-bottom: 1px solid #ddd; flex-wrap: wrap; position: sticky;
+                 top: 0; z-index: 10; }
+    .tab-button { padding: 6px 14px; border: 1px solid #ccc; border-radius: 4px;
+                  background: #f5f5f5; cursor: pointer; font-size: 13px; }
+    .tab-button.active { background: #2c5282; color: white; border-color: #2c5282; }
+    .tab-button:hover:not(.active) { background: #e6e6e6; }
+    .tab-page { padding: 8px 12px; }
+    h1.page-title { margin: 12px; font-size: 16px; color: #555; font-weight: 500; }
+    """
+
+    js = """
+    function showTab(idx) {
+      document.querySelectorAll('.tab-page').forEach(function(el, i) {
+        el.style.display = (i === idx) ? 'block' : 'none';
+      });
+      document.querySelectorAll('.tab-button').forEach(function(el, i) {
+        el.classList.toggle('active', i === idx);
+      });
+      // Plotly figures need a resize when un-hidden so axes pick up the
+      // container width that was zero while display:none.
+      var page = document.querySelectorAll('.tab-page')[idx];
+      if (page) {
+        page.querySelectorAll('.js-plotly-plot').forEach(function(p) {
+          if (window.Plotly) { window.Plotly.Plots.resize(p); }
+        });
+      }
+    }
+    """
+
+    html = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{title}</title>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>{css}</style>
+</head>
+<body>
+<h1 class="page-title">{title}</h1>
+<div class="tab-strip">{''.join(tab_buttons)}</div>
+{''.join(tab_pages)}
+<script>{js}</script>
+</body>
+</html>
+"""
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(html)
+
+
 def main():
     print("visualise_backtest: skeleton only")
 

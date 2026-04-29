@@ -5,6 +5,8 @@ Asserts on pure data functions in visualise_backtest.
 import os
 import sys
 import glob as glob_module
+import tempfile
+import plotly.graph_objects as go
 
 # Make project root importable when run from repo root or tests/ dir
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -166,6 +168,32 @@ def test_build_summary_figure_has_top_total_and_per_product_overlay():
     assert len(fig.data) == 1 + len(products)
     # The first trace should be the total cumulative.
     assert fig.data[0].name == "total"
+
+
+def test_write_tabbed_html_produces_one_div_per_tab():
+    from visualise_backtest import write_tabbed_html
+    figs = {
+        "Summary": go.Figure(go.Scatter(x=[0, 1], y=[0, 1])),
+        "GROUP_A":  go.Figure(go.Scatter(x=[0, 1], y=[1, 2])),
+    }
+    with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as tf:
+        path = tf.name
+    try:
+        write_tabbed_html(figs, path, title="Test")
+        with open(path, "r", encoding="utf-8") as f:
+            html = f.read()
+        # One tab button per figure (count by data-tab attribute, which is
+        # unique per button regardless of whether the .active class is set).
+        assert html.count('data-tab="tab-') == 2
+        # One page div per figure
+        assert html.count('class="tab-page"') == 2
+        # Plotly is loaded once via CDN
+        assert "cdn.plot.ly" in html or "cdn.plotly.com" in html
+        # Both labels appear in the nav
+        assert ">Summary<" in html
+        assert ">GROUP_A<" in html
+    finally:
+        os.remove(path)
 
 
 def run_all():
