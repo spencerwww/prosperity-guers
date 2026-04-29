@@ -125,6 +125,28 @@ def test_build_position_cumulates_signed_qty_on_tick_grid():
     assert series.tolist() == [0, 4, 4, 3, 3, 5, 5]
 
 
+def test_build_group_figure_has_expected_subplot_grid():
+    from visualise_backtest import (
+        load_log, derive_sides, build_position_per_product, build_group_figure
+    )
+    activities, trades = load_log(_latest_backtest_log())
+    trades = derive_sides(trades)
+    products = sorted(activities["product"].unique())[:3]  # any 3 products
+    ts_grid = pd.Index(sorted(activities["abs_timestamp"].unique()),
+                       name="abs_timestamp")
+    positions = build_position_per_product(trades, ts_grid)
+
+    fig = build_group_figure("TEST", products, activities, trades, positions,
+                              day_boundaries=[])
+    # 3 rows x 3 cols = 9 subplots; Plotly stores axes as xaxis, xaxis2 ... xaxis9.
+    xaxes = [k for k in fig.layout if k.startswith("xaxis")]
+    yaxes = [k for k in fig.layout if k.startswith("yaxis")]
+    assert len(xaxes) == 9, f"expected 9 x-axes, got {len(xaxes)}"
+    assert len(yaxes) == 9, f"expected 9 y-axes, got {len(yaxes)}"
+    # At least one trace per row * col should be present.
+    assert len(fig.data) >= 9
+
+
 def run_all():
     failed = 0
     for name, fn in list(globals().items()):

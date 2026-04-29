@@ -178,6 +178,139 @@ def build_position_per_product(
     return out
 
 
+def _quantity_to_size(qty: pd.Series, base: float = 7, scale: float = 0.6) -> pd.Series:
+    return base + qty.clip(lower=1, upper=25) * scale
+
+
+def build_group_figure(
+    group: str,
+    products: list[str],
+    activities: pd.DataFrame,
+    trades: pd.DataFrame,
+    positions: dict[str, pd.DataFrame],
+    day_boundaries: list[int],
+) -> go.Figure:
+    """Build the Nx3 grid for one group: [price+fills, position, equity] per product."""
+    n = len(products)
+    titles = []
+    for p in products:
+        titles.extend([f"<b>{p}</b> — price + fills", "position", "equity"])
+
+    fig = make_subplots(
+        rows=n, cols=3,
+        shared_xaxes=True,
+        column_widths=[0.5, 0.25, 0.25],
+        vertical_spacing=0.04,
+        horizontal_spacing=0.05,
+        subplot_titles=titles,
+    )
+
+    for i, product in enumerate(products, start=1):
+        prod_act = (
+            activities[activities["product"] == product]
+            .dropna(subset=["mid_price"])
+            .sort_values("abs_timestamp")
+        )
+        prod_trades = trades[trades["symbol"] == product] if not trades.empty else trades
+        ours = prod_trades[prod_trades["side"].isin(["BUY", "SELL"])] if not prod_trades.empty else prod_trades
+        market = prod_trades[prod_trades["side"] == "MARKET"] if not prod_trades.empty else prod_trades
+
+        # ----- col 1: price + market fills + our fills -----
+        fig.add_trace(go.Scatter(
+            x=prod_act["abs_timestamp"], y=prod_act["mid_price"],
+            mode="lines", name="mid",
+            line=dict(color="#888", width=1),
+            showlegend=False,
+            hovertemplate="t=%{x}<br>mid=%{y}<extra></extra>",
+        ), row=i, col=1)
+
+        if not market.empty:
+            fig.add_trace(go.Scatter(
+                x=market["abs_timestamp"], y=market["price"],
+                mode="markers", name="market",
+                marker=dict(color=MARKET_COLOUR,
+                            size=_quantity_to_size(market["quantity"], base=5, scale=0.4),
+                            line=dict(color="rgba(0,0,0,0.2)", width=0.3)),
+                customdata=market[["quantity", "buyer", "seller"]].values,
+                hovertemplate=(
+                    "t=%{x}<br>qty=%{customdata[0]} @ %{y}<br>"
+                    "%{customdata[1]} → %{customdata[2]}<extra></extra>"
+                ),
+                showlegend=False,
+            ), row=i, col=1)
+
+        if not ours.empty:
+            buys = ours[ours["side"] == "BUY"]
+            sells = ours[ours["side"] == "SELL"]
+            if not buys.empty:
+                fig.add_trace(go.Scatter(
+                    x=buys["abs_timestamp"], y=buys["price"],
+                    mode="markers", name="our BUY",
+                    marker=dict(color=BUY_COLOUR, symbol="triangle-up",
+                                size=_quantity_to_size(buys["quantity"]),
+                                line=dict(color="black", width=0.6)),
+                    customdata=buys[["quantity", "counterparty"]].values,
+                    hovertemplate=(
+                        "BUY %{customdata[0]} @ %{y}<br>"
+                        "t=%{x}<br>from: %{customdata[1]}<extra></extra>"
+                    ),
+                    showlegend=False,
+                ), row=i, col=1)
+            if not sells.empty:
+                fig.add_trace(go.Scatter(
+                    x=sells["abs_timestamp"], y=sells["price"],
+                    mode="markers", name="our SELL",
+                    marker=dict(color=SELL_COLOUR, symbol="triangle-down",
+                                size=_quantity_to_size(sells["quantity"]),
+                                line=dict(color="black", width=0.6)),
+                    customdata=sells[["quantity", "counterparty"]].values,
+                    hovertemplate=(
+                        "SELL %{customdata[0]} @ %{y}<br>"
+                        "t=%{x}<br>to: %{customdata[1]}<extra></extra>"
+                    ),
+                    showlegend=False,
+                ), row=i, col=1)
+
+        # ----- col 2: position step plot -----
+        pos_df = positions.get(product)
+        if pos_df is not None and not pos_df.empty:
+            fig.add_trace(go.Scatter(
+                x=pos_df["abs_timestamp"], y=pos_df["position"],
+                mode="lines", name="position",
+                line=dict(color="#2c5282", width=1, shape="hv"),
+                showlegend=False,
+                hovertemplate="t=%{x}<br>pos=%{y}<extra></extra>",
+            ), row=i, col=2)
+        else:
+            fig.add_trace(go.Scatter(x=[], y=[], mode="lines", showlegend=False),
+                          row=i, col=2)
+        fig.add_hline(y=0, line=dict(color="#aaa", width=0.5, dash="dot"),
+                      row=i, col=2)
+
+        # ----- col 3: per-product equity -----
+        fig.add_trace(go.Scatter(
+            x=prod_act["abs_timestamp"], y=prod_act["profit_and_loss"],
+            mode="lines", name="equity",
+            line=dict(color="#805ad5", width=1.2),
+            showlegend=False,
+            hovertemplate="t=%{x}<br>pnl=%{y:.1f}<extra></extra>",
+        ), row=i, col=3)
+        fig.add_hline(y=0, line=dict(color="#aaa", width=0.5, dash="dot"),
+                      row=i, col=3)
+
+    # Day boundary lines apply to every subplot.
+    for bx in day_boundaries:
+        fig.add_vline(x=bx, line=dict(color="#aaa", width=0.5, dash="dot"))
+
+    fig.update_layout(
+        title=f"Group: {group}",
+        height=max(360, 220 * n),
+        hovermode="x unified",
+        margin=dict(l=60, r=30, t=80, b=40),
+    )
+    return fig
+
+
 def main():
     print("visualise_backtest: skeleton only")
 
