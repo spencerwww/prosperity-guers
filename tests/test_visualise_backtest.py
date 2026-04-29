@@ -147,6 +147,27 @@ def test_build_group_figure_has_expected_subplot_grid():
     assert len(fig.data) >= 9
 
 
+def test_build_summary_figure_has_top_total_and_per_product_overlay():
+    from visualise_backtest import (
+        load_log, build_summary_figure, bucket_products,
+    )
+    activities, _ = load_log(_latest_backtest_log())
+    products = sorted(activities["product"].unique())
+    by_group = bucket_products(products)
+
+    fig = build_summary_figure(activities, by_group, day_boundaries=[])
+    # Two subplots = 2 x-axes / 2 y-axes
+    xaxes = [k for k in fig.layout if k.startswith("xaxis")]
+    yaxes = [k for k in fig.layout if k.startswith("yaxis")]
+    assert len(xaxes) == 2
+    assert len(yaxes) == 2
+
+    # Trace count: 1 (top: total) + N products (bottom)
+    assert len(fig.data) == 1 + len(products)
+    # The first trace should be the total cumulative.
+    assert fig.data[0].name == "total"
+
+
 def run_all():
     failed = 0
     for name, fn in list(globals().items()):

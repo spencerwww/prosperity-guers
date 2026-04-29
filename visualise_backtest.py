@@ -311,6 +311,74 @@ def build_group_figure(
     return fig
 
 
+def build_summary_figure(
+    activities: pd.DataFrame,
+    products_by_group: dict[str, list[str]],
+    day_boundaries: list[int],
+) -> go.Figure:
+    """Two-panel summary: total cumulative equity on top, per-product overlay below."""
+    fig = make_subplots(
+        rows=2, cols=1,
+        shared_xaxes=True,
+        row_heights=[0.4, 0.6],
+        vertical_spacing=0.06,
+        subplot_titles=("Total cumulative equity (sum across all products)",
+                        "Per-product equity (coloured by group)"),
+    )
+
+    # ----- top: total cumulative equity -----
+    total = (
+        activities.groupby("abs_timestamp")["profit_and_loss"]
+        .sum()
+        .sort_index()
+    )
+    fig.add_trace(go.Scatter(
+        x=total.index, y=total.values,
+        mode="lines", name="total",
+        line=dict(color="#000000", width=2.5),
+        hovertemplate="t=%{x}<br>total pnl=%{y:.1f}<extra></extra>",
+    ), row=1, col=1)
+    fig.add_hline(y=0, line=dict(color="#aaa", width=0.5, dash="dot"),
+                  row=1, col=1)
+
+    # ----- bottom: per-product overlay coloured by group -----
+    for group, products in products_by_group.items():
+        colour = GROUP_COLOURS.get(group, "#888888")
+        for product in products:
+            prod_act = (
+                activities[activities["product"] == product]
+                .sort_values("abs_timestamp")
+            )
+            fig.add_trace(go.Scatter(
+                x=prod_act["abs_timestamp"], y=prod_act["profit_and_loss"],
+                mode="lines", name=product,
+                legendgroup=group,
+                legendgrouptitle_text=group,
+                line=dict(color=colour, width=1),
+                hovertemplate=(
+                    f"<b>{product}</b><br>"
+                    "t=%{x}<br>pnl=%{y:.1f}<extra></extra>"
+                ),
+            ), row=2, col=1)
+    fig.add_hline(y=0, line=dict(color="#aaa", width=0.5, dash="dot"),
+                  row=2, col=1)
+
+    for bx in day_boundaries:
+        fig.add_vline(x=bx, line=dict(color="#aaa", width=0.5, dash="dot"))
+
+    fig.update_layout(
+        title="Summary",
+        height=720,
+        hovermode="x unified",
+        legend=dict(groupclick="toggleitem"),
+        margin=dict(l=60, r=200, t=80, b=40),
+    )
+    fig.update_yaxes(title_text="total PnL", row=1, col=1)
+    fig.update_yaxes(title_text="product PnL", row=2, col=1)
+    fig.update_xaxes(title_text="timestamp", row=2, col=1)
+    return fig
+
+
 def main():
     print("visualise_backtest: skeleton only")
 
