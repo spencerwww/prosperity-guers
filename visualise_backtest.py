@@ -127,6 +127,57 @@ def load_log(path: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     return activities, trades
 
 
+def derive_sides(trades: pd.DataFrame) -> pd.DataFrame:
+    """Tag each trade as our BUY, our SELL, or MARKET (no SUBMISSION involved).
+
+    Adds three columns: `side`, `counterparty`, `signed_qty`.
+    """
+    out = trades.copy()
+    if out.empty:
+        out["side"] = pd.Series(dtype=str)
+        out["counterparty"] = pd.Series(dtype=str)
+        out["signed_qty"] = pd.Series(dtype="int64")
+        return out
+
+    sides, cps = [], []
+    for buyer, seller in zip(out["buyer"], out["seller"]):
+        if buyer == "SUBMISSION":
+            sides.append("BUY")
+            cps.append(seller)
+        elif seller == "SUBMISSION":
+            sides.append("SELL")
+            cps.append(buyer)
+        else:
+            sides.append("MARKET")
+            cps.append(f"{buyer} ↔ {seller}")
+    out["side"] = sides
+    out["counterparty"] = cps
+    sign_map = {"BUY": 1, "SELL": -1, "MARKET": 0}
+    out["signed_qty"] = out["quantity"] * out["side"].map(sign_map).fillna(0)
+    out["signed_qty"] = out["signed_qty"].astype("int64")
+    return out
+
+
+def build_position_per_product(
+    trades: pd.DataFrame, ts_grid: pd.Index
+) -> dict[str, pd.DataFrame]:
+    """Cumulative net position per product, evaluated on the activities tick grid.
+
+    Returns a dict keyed by symbol; each value is a 2-column DataFrame
+    `[abs_timestamp, position]`.
+    """
+    out: dict[str, pd.DataFrame] = {}
+    if trades.empty:
+        return out
+    ours = trades[trades["side"].isin(["BUY", "SELL"])]
+    for product, grp in ours.groupby("symbol"):
+        per_ts = grp.groupby("abs_timestamp")["signed_qty"].sum()
+        pos = per_ts.reindex(ts_grid, fill_value=0).cumsum()
+        pos.name = "position"
+        out[product] = pos.reset_index()
+    return out
+
+
 def main():
     print("visualise_backtest: skeleton only")
 

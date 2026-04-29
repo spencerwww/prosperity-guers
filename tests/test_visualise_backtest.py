@@ -82,6 +82,49 @@ def test_load_log_returns_two_dataframes_with_expected_columns():
         assert (activities["abs_timestamp"] == activities["timestamp"]).all()
 
 
+def test_derive_sides_tags_buy_sell_market():
+    from visualise_backtest import derive_sides
+    df = pd.DataFrame([
+        {"timestamp": 0, "buyer": "SUBMISSION", "seller": "Mark 14",
+         "symbol": "X", "price": 100, "quantity": 3, "abs_timestamp": 0},
+        {"timestamp": 1, "buyer": "Mark 22", "seller": "SUBMISSION",
+         "symbol": "X", "price": 101, "quantity": 5, "abs_timestamp": 1},
+        {"timestamp": 2, "buyer": "Mark 14", "seller": "Mark 22",
+         "symbol": "X", "price": 102, "quantity": 7, "abs_timestamp": 2},
+    ])
+    out = derive_sides(df)
+    assert list(out["side"]) == ["BUY", "SELL", "MARKET"]
+    assert list(out["counterparty"]) == ["Mark 14", "Mark 22", "Mark 14 ↔ Mark 22"]
+    assert list(out["signed_qty"]) == [3, -5, 0]
+
+
+def test_derive_sides_handles_empty_input():
+    from visualise_backtest import derive_sides
+    df = pd.DataFrame(columns=["timestamp", "buyer", "seller", "symbol",
+                               "price", "quantity", "abs_timestamp"])
+    out = derive_sides(df)
+    assert list(out.columns) == list(df.columns) + ["side", "counterparty", "signed_qty"]
+    assert len(out) == 0
+
+
+def test_build_position_cumulates_signed_qty_on_tick_grid():
+    from visualise_backtest import derive_sides, build_position_per_product
+    trades = pd.DataFrame([
+        {"timestamp": 100, "buyer": "SUBMISSION", "seller": "M",
+         "symbol": "X", "price": 1, "quantity": 4, "abs_timestamp": 100},
+        {"timestamp": 200, "buyer": "M", "seller": "SUBMISSION",
+         "symbol": "X", "price": 1, "quantity": 1, "abs_timestamp": 200},
+        {"timestamp": 300, "buyer": "SUBMISSION", "seller": "M",
+         "symbol": "X", "price": 1, "quantity": 2, "abs_timestamp": 300},
+    ])
+    trades = derive_sides(trades)
+    ts_grid = pd.Index([0, 100, 150, 200, 250, 300, 400], name="abs_timestamp")
+    pos = build_position_per_product(trades, ts_grid)
+    assert "X" in pos
+    series = pos["X"].set_index("abs_timestamp")["position"]
+    assert series.tolist() == [0, 4, 4, 3, 3, 5, 5]
+
+
 def run_all():
     failed = 0
     for name, fn in list(globals().items()):
