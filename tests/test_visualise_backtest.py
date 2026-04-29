@@ -4,6 +4,7 @@ Asserts on pure data functions in visualise_backtest.
 """
 import os
 import sys
+import glob as glob_module
 
 # Make project root importable when run from repo root or tests/ dir
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -52,6 +53,33 @@ def test_bucket_products_skips_empty_groups():
     out = bucket_products(products)
     assert "GALAXY_SOUNDS" not in out
     assert out["SNACKPACK"] == ["SNACKPACK_VANILLA"]
+
+
+def _latest_backtest_log():
+    paths = sorted(glob_module.glob(os.path.join(ROOT, "backtests", "*.log")))
+    assert paths, "No backtest logs found in backtests/"
+    return paths[-1]
+
+
+def test_load_log_returns_two_dataframes_with_expected_columns():
+    from visualise_backtest import load_log
+    activities, trades = load_log(_latest_backtest_log())
+
+    assert isinstance(activities, pd.DataFrame)
+    assert isinstance(trades, pd.DataFrame)
+
+    for col in ["day", "timestamp", "product", "mid_price", "profit_and_loss",
+                "abs_timestamp"]:
+        assert col in activities.columns, f"missing activities column {col}"
+
+    # tradeHistory may be empty in some logs but the DataFrame still has the schema.
+    for col in ["timestamp", "buyer", "seller", "symbol", "price", "quantity",
+                "abs_timestamp"]:
+        assert col in trades.columns, f"missing trades column {col}"
+
+    # abs_timestamp matches timestamp when single-day; otherwise differs.
+    if activities["day"].nunique() == 1:
+        assert (activities["abs_timestamp"] == activities["timestamp"]).all()
 
 
 def run_all():
