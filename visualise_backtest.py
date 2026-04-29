@@ -46,6 +46,10 @@ BUY_COLOUR = "#1f9d55"
 SELL_COLOUR = "#c0392b"
 MARKET_COLOUR = "rgba(120,120,120,0.35)"
 
+# Cap line-series points to keep HTML payload small. Markers (trades) are
+# never downsampled; only dense lines (mid, position, equity).
+MAX_POINTS_PER_LINE = 3000
+
 
 def bucket_symbol(symbol: str) -> str:
     """Return the family group for a product symbol, or 'OTHER' if no prefix matches.
@@ -182,6 +186,15 @@ def _quantity_to_size(qty: pd.Series, base: float = 7, scale: float = 0.6) -> pd
     return base + qty.clip(lower=1, upper=25) * scale
 
 
+def _downsample(obj, max_points: int = MAX_POINTS_PER_LINE):
+    """Stride-sample a DataFrame or Series down to at most max_points rows."""
+    n = len(obj)
+    if n <= max_points:
+        return obj
+    stride = (n + max_points - 1) // max_points
+    return obj.iloc[::stride]
+
+
 def build_group_figure(
     group: str,
     products: list[str],
@@ -211,13 +224,14 @@ def build_group_figure(
             .dropna(subset=["mid_price"])
             .sort_values("abs_timestamp")
         )
+        prod_act_ds = _downsample(prod_act)
         prod_trades = trades[trades["symbol"] == product] if not trades.empty else trades
         ours = prod_trades[prod_trades["side"].isin(["BUY", "SELL"])] if not prod_trades.empty else prod_trades
         market = prod_trades[prod_trades["side"] == "MARKET"] if not prod_trades.empty else prod_trades
 
         # ----- col 1: price + market fills + our fills -----
         fig.add_trace(go.Scatter(
-            x=prod_act["abs_timestamp"], y=prod_act["mid_price"],
+            x=prod_act_ds["abs_timestamp"], y=prod_act_ds["mid_price"],
             mode="lines", name="mid",
             line=dict(color="#888", width=1),
             showlegend=False,
@@ -274,8 +288,9 @@ def build_group_figure(
         # ----- col 2: position step plot -----
         pos_df = positions.get(product)
         if pos_df is not None and not pos_df.empty:
+            pos_ds = _downsample(pos_df)
             fig.add_trace(go.Scatter(
-                x=pos_df["abs_timestamp"], y=pos_df["position"],
+                x=pos_ds["abs_timestamp"], y=pos_ds["position"],
                 mode="lines", name="position",
                 line=dict(color="#2c5282", width=1, shape="hv"),
                 showlegend=False,
@@ -289,7 +304,7 @@ def build_group_figure(
 
         # ----- col 3: per-product equity -----
         fig.add_trace(go.Scatter(
-            x=prod_act["abs_timestamp"], y=prod_act["profit_and_loss"],
+            x=prod_act_ds["abs_timestamp"], y=prod_act_ds["profit_and_loss"],
             mode="lines", name="equity",
             line=dict(color="#805ad5", width=1.2),
             showlegend=False,
@@ -332,8 +347,9 @@ def build_summary_figure(
         .sum()
         .sort_index()
     )
+    total_ds = _downsample(total)
     fig.add_trace(go.Scatter(
-        x=total.index, y=total.values,
+        x=total_ds.index, y=total_ds.values,
         mode="lines", name="total",
         line=dict(color="#000000", width=2.5),
         hovertemplate="t=%{x}<br>total pnl=%{y:.1f}<extra></extra>",
@@ -349,6 +365,7 @@ def build_summary_figure(
                 activities[activities["product"] == product]
                 .sort_values("abs_timestamp")
             )
+            prod_act = _downsample(prod_act)
             fig.add_trace(go.Scatter(
                 x=prod_act["abs_timestamp"], y=prod_act["profit_and_loss"],
                 mode="lines", name=product,

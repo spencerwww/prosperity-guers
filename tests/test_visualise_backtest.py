@@ -196,6 +196,24 @@ def test_write_tabbed_html_produces_one_div_per_tab():
         os.remove(path)
 
 
+def test_downsample_caps_at_max_points():
+    from visualise_backtest import _downsample, MAX_POINTS_PER_LINE
+    # Below the cap: passes through unchanged.
+    small = pd.DataFrame({"x": range(100)})
+    assert len(_downsample(small)) == 100
+
+    # Above the cap: stride-sampled to <= max_points.
+    big = pd.DataFrame({"x": range(MAX_POINTS_PER_LINE * 10)})
+    out = _downsample(big)
+    assert len(out) <= MAX_POINTS_PER_LINE
+    # First and last x values are preserved roughly (first exact, last close).
+    assert out["x"].iloc[0] == 0
+
+    # Series path also works.
+    s = pd.Series(range(MAX_POINTS_PER_LINE * 5))
+    assert len(_downsample(s)) <= MAX_POINTS_PER_LINE
+
+
 def run_all():
     failed = 0
     for name, fn in list(globals().items()):
