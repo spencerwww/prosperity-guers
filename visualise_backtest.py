@@ -106,24 +106,27 @@ def load_log(path: str) -> tuple[pd.DataFrame, pd.DataFrame]:
 
     if "day" in activities.columns:
         day_min = activities["day"].min()
-        activities["abs_timestamp"] = (
-            activities["timestamp"] + (activities["day"] - day_min) * DAY_LENGTH
-        )
-        # Trades have no explicit `day` field. Backtest logs emit trade timestamps
-        # already aligned with activities; match by (timestamp, symbol) where
-        # possible. The simplest and correct approach: map each trade timestamp
-        # to the activities row sharing it, then carry that day's offset.
-        if not trades.empty:
-            ts_to_day = (
-                activities.drop_duplicates("timestamp")
-                          .set_index("timestamp")["day"]
-            )
-            trades["day"] = trades["timestamp"].map(ts_to_day).fillna(day_min).astype(int)
-            trades["abs_timestamp"] = (
-                trades["timestamp"] + (trades["day"] - day_min) * DAY_LENGTH
-            )
+        # Some log formats reset `timestamp` to 0 at each day boundary; others
+        # emit a single absolute timeline that already spans days. Detect by
+        # range — per-day timestamps stay strictly below DAY_LENGTH.
+        if activities["timestamp"].max() >= DAY_LENGTH:
+            activities["abs_timestamp"] = activities["timestamp"]
+            trades["abs_timestamp"] = trades["timestamp"] if not trades.empty else trades["timestamp"]
         else:
-            trades["abs_timestamp"] = trades["timestamp"]
+            activities["abs_timestamp"] = (
+                activities["timestamp"] + (activities["day"] - day_min) * DAY_LENGTH
+            )
+            if not trades.empty:
+                ts_to_day = (
+                    activities.drop_duplicates("timestamp")
+                              .set_index("timestamp")["day"]
+                )
+                trades["day"] = trades["timestamp"].map(ts_to_day).fillna(day_min).astype(int)
+                trades["abs_timestamp"] = (
+                    trades["timestamp"] + (trades["day"] - day_min) * DAY_LENGTH
+                )
+            else:
+                trades["abs_timestamp"] = trades["timestamp"]
     else:
         activities["abs_timestamp"] = activities["timestamp"]
         trades["abs_timestamp"] = trades["timestamp"]
