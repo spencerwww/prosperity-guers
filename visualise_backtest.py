@@ -47,6 +47,39 @@ SELL_COLOUR = "#c0392b"
 MARKET_COLOUR = "rgba(120,120,120,0.35)"
 
 
+def bucket_symbol(symbol: str) -> str:
+    """Return the family group for a product symbol, or 'OTHER' if no prefix matches.
+
+    Uses longest-prefix-match against GROUP_ORDER so that, e.g., 'SLEEP_POD'
+    wins over any accidental shorter match.
+    """
+    matches = [g for g in GROUP_ORDER if symbol.startswith(g + "_") or symbol == g]
+    if not matches:
+        return "OTHER"
+    return max(matches, key=len)
+
+
+def bucket_products(products: list[str]) -> dict[str, list[str]]:
+    """Group products by family, preserving GROUP_ORDER and putting OTHER last.
+
+    Empty groups are omitted. Products inside each group are sorted alphabetically.
+    """
+    grouped: dict[str, list[str]] = {}
+    for p in products:
+        g = bucket_symbol(p)
+        grouped.setdefault(g, []).append(p)
+    for g in grouped:
+        grouped[g].sort()
+
+    ordered: dict[str, list[str]] = {}
+    for g in GROUP_ORDER:
+        if g in grouped:
+            ordered[g] = grouped[g]
+    if "OTHER" in grouped:
+        ordered["OTHER"] = grouped["OTHER"]
+    return ordered
+
+
 def main():
     print("visualise_backtest: skeleton only")
 
