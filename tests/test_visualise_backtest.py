@@ -127,6 +127,33 @@ def test_build_position_cumulates_signed_qty_on_tick_grid():
     assert series.tolist() == [0, 4, 4, 3, 3, 5, 5]
 
 
+def test_build_position_resets_at_day_boundary():
+    from visualise_backtest import (
+        derive_sides, build_position_per_product, DAY_LENGTH,
+    )
+    # Day 0: buy 4, then sell 1 → end at +3.
+    # Day 1: buy 2 → +2 (does NOT continue from +3).
+    trades = pd.DataFrame([
+        {"timestamp": 100, "buyer": "SUBMISSION", "seller": "M",
+         "symbol": "X", "price": 1, "quantity": 4, "abs_timestamp": 100},
+        {"timestamp": 500, "buyer": "M", "seller": "SUBMISSION",
+         "symbol": "X", "price": 1, "quantity": 1, "abs_timestamp": 500},
+        {"timestamp": DAY_LENGTH + 200, "buyer": "SUBMISSION", "seller": "M",
+         "symbol": "X", "price": 1, "quantity": 2,
+         "abs_timestamp": DAY_LENGTH + 200},
+    ])
+    trades = derive_sides(trades)
+    ts_grid = pd.Index(
+        [0, 100, 500, DAY_LENGTH - 100, DAY_LENGTH, DAY_LENGTH + 200, DAY_LENGTH + 400],
+        name="abs_timestamp",
+    )
+    pos = build_position_per_product(trades, ts_grid)
+    series = pos["X"].set_index("abs_timestamp")["position"]
+    # Day 0 ends at +3 (last point inside [0, DAY_LENGTH)).
+    # Day 1 starts at 0 (DAY_LENGTH), then buys 2 at DAY_LENGTH + 200 → +2.
+    assert series.tolist() == [0, 4, 3, 3, 0, 2, 2]
+
+
 def test_build_group_figure_has_expected_subplot_grid():
     from visualise_backtest import (
         load_log, derive_sides, build_position_per_product, build_group_figure

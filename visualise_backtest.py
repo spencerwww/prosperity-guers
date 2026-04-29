@@ -170,6 +170,10 @@ def build_position_per_product(
 ) -> dict[str, pd.DataFrame]:
     """Cumulative net position per product, evaluated on the activities tick grid.
 
+    Position resets to zero at each day boundary (every DAY_LENGTH of
+    abs_timestamp) so multi-day backtests show intraday trajectories rather
+    than a single running sum.
+
     Returns a dict keyed by symbol; each value is a 2-column DataFrame
     `[abs_timestamp, position]`.
     """
@@ -177,9 +181,12 @@ def build_position_per_product(
     if trades.empty:
         return out
     ours = trades[trades["side"].isin(["BUY", "SELL"])]
+    # Day index per grid point: 0 for [0, DAY_LENGTH), 1 for [DAY_LENGTH, 2*DAY_LENGTH), ...
+    grid_day = (ts_grid // DAY_LENGTH).astype(int)
     for product, grp in ours.groupby("symbol"):
         per_ts = grp.groupby("abs_timestamp")["signed_qty"].sum()
-        pos = per_ts.reindex(ts_grid, fill_value=0).cumsum()
+        signed = per_ts.reindex(ts_grid, fill_value=0)
+        pos = signed.groupby(grid_day).cumsum()
         pos.name = "position"
         out[product] = pos.reset_index()
     return out
