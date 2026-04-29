@@ -402,8 +402,14 @@ def write_tabbed_html(
     title: str,
 ) -> None:
     """Write one HTML file with a top tab strip; clicking a tab swaps which
-    Plotly figure div is visible. Plotly.js is loaded once via CDN.
+    Plotly figure div is visible. Plotly.js is loaded once via CDN, pinned
+    to the version bundled with the installed Plotly Python — required so
+    the CDN script can decode the base64 binary array format that Plotly
+    emits in newer versions.
     """
+    from plotly.offline.offline import get_plotlyjs_version
+    plotlyjs_cdn = f"https://cdn.plot.ly/plotly-{get_plotlyjs_version()}.min.js"
+
     tab_buttons = []
     tab_pages = []
     for i, (label, fig) in enumerate(figures.items()):
@@ -462,7 +468,7 @@ def write_tabbed_html(
 <head>
 <meta charset="utf-8">
 <title>{title}</title>
-<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<script src="{plotlyjs_cdn}"></script>
 <style>{css}</style>
 </head>
 <body>
