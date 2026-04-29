@@ -460,8 +460,68 @@ def write_tabbed_html(
         f.write(html)
 
 
+def pick_log() -> str:
+    candidates = sorted(glob.glob(os.path.join("backtests", "*.log")))
+    if not candidates:
+        raise FileNotFoundError("No backtests/*.log files found")
+    print("Available backtest logs:")
+    for i, p in enumerate(candidates):
+        print(f"  [{i}] {p}")
+    choice = input("Enter number (default = most recent): ").strip()
+    idx = int(choice) if choice else len(candidates) - 1
+    return candidates[idx]
+
+
+def _day_boundaries(activities: pd.DataFrame) -> list[int]:
+    """Return abs_timestamp positions where each new day starts (excluding the first)."""
+    if "day" not in activities.columns or activities["day"].nunique() <= 1:
+        return []
+    day_min = activities["day"].min()
+    days = sorted(d for d in activities["day"].unique() if d != day_min)
+    return [(d - day_min) * DAY_LENGTH for d in days]
+
+
 def main():
-    print("visualise_backtest: skeleton only")
+    log_path = sys.argv[1] if len(sys.argv) >= 2 else pick_log()
+    if not os.path.isfile(log_path):
+        print(f"Error: file not found: {log_path}")
+        sys.exit(1)
+
+    print(f"Loading {log_path} ...")
+    activities, trades = load_log(log_path)
+    trades = derive_sides(trades)
+
+    products = sorted(activities["product"].unique())
+    by_group = bucket_products(products)
+
+    n_ours = int((trades["side"].isin(["BUY", "SELL"])).sum()) if not trades.empty else 0
+    n_market = int((trades["side"] == "MARKET").sum()) if not trades.empty else 0
+    final_pnl = activities.groupby("product")["profit_and_loss"].last().sum()
+
+    print(f"  products       : {len(products)} across {len(by_group)} groups")
+    print(f"  ticks          : {activities['abs_timestamp'].nunique()}")
+    print(f"  our fills      : {n_ours}")
+    print(f"  market fills   : {n_market}")
+    print(f"  final P&L sum  : {final_pnl:+,.2f}")
+
+    ts_grid = pd.Index(sorted(activities["abs_timestamp"].unique()),
+                       name="abs_timestamp")
+    positions = build_position_per_product(trades, ts_grid)
+    boundaries = _day_boundaries(activities)
+
+    print("Building figures ...")
+    figures: dict[str, go.Figure] = {}
+    figures["Summary"] = build_summary_figure(activities, by_group, boundaries)
+    for group, group_products in by_group.items():
+        figures[group] = build_group_figure(
+            group, group_products, activities, trades, positions, boundaries,
+        )
+
+    out_path = os.path.splitext(log_path)[0] + "_visualisation.html"
+    title = f"backtest {os.path.basename(log_path)}  (final P&L: {final_pnl:+,.1f})"
+    write_tabbed_html(figures, out_path, title=title)
+    print(f"\nWrote {out_path}")
+    webbrowser.open("file://" + os.path.abspath(out_path))
 
 
 if __name__ == "__main__":
