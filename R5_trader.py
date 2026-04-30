@@ -99,9 +99,105 @@ SNACKPACK_VC_SYMBOLS = [
     'SNACKPACK_CHOCOLATE',
 ]
 
+MC_SR_SYMBOLS = [
+    'MICROCHIP_SQUARE',
+    'MICROCHIP_RECTANGLE',
+]
+
+XLS_SYMBOLS = [
+    'PEBBLES_XL',
+    'PEBBLES_S',
+]
+
+SPPS_SYMBOLS = [
+    'SLEEP_POD_SUEDE',
+    'SLEEP_POD_POLYESTER',
+]
+
+R_VI_SYMBOLS = [
+    'ROBOT_VACUUMING',
+    'ROBOT_IRONING',
+]
+
+PANEL_PAIR_SYMBOLS = [
+    'PANEL_1X2',
+    'PANEL_2X2',
+]
+
 POS_LIMIT = 10
 
 LONG, NEUTRAL, SHORT = 1, 0, -1
+
+# ---------------------------------------------
+################### BASKET #####################
+# ---------------------------------------------
+
+############### TRANSLATOR ###############
+
+TRANSLATOR_BETA = [ 18.54104359, -26.43758433,   9.15449103,  28.68298071]
+TRANSLATOR_SPREAD_MEAN = 276.8511333284233
+TRANSLATOR_SPREAD_STD = 1.00
+TRANSLATOR_THRESHOLD = 1.5
+
+################# GALAXY_SOUNDS ##############
+
+GS_BETA = [ 1.23248065, 15.74276142, -4.92857599, 15.29650459, 16.62256435]
+GS_SPREAD_MEAN = 407.36001200029426
+GS_SPREAD_STD = 1.00
+GS_THRESHOLD = 1.5
+
+############### MICROCHIP ###############
+
+MICROCHIP_BETA = [16.34572941, -13.59596011, -31.82337302]
+MICROCHIP_SPREAD_MEAN = -268.3509747533391
+MICROCHIP_SPREAD_STD = 1.0003801297138426
+MICROCHIP_THRESHOLD = 1.2
+
+############## UV ########################
+
+UV_BETA = [21.38397387, 34.02936129,  9.20705138, 26.7099268 ,  2.96050108]
+UV_SPREAD_MEAN = 870.1087979178878
+UV_SPREAD_STD = 1.00
+UV_THRESHOLD = 1.0
+
+################# OS ##########################
+
+OS_BETA = [21.16614083,  -7.30450388, -16.93241485,  -1.96112573, -5.93961389]
+OS_SPREAD_MEAN = -104.36703744993089
+OS_SPREAD_STD = 1.00
+OS_THRESHOLD = 1.0
+
+############# ROBOT ###########################
+
+R_BETA = [21.89333144, 15.9365944 , 19.54685174, 22.14675073, -1.25250787]
+R_SPREAD_MEAN = 720.6105166538539
+R_SPREAD_STD = 1.00
+R_THRESHOLD = 1.0
+
+############# SLEEP_POD ########################
+
+SP_BETA = [ 16.52581225, -17.71073443,   4.43916018, -30.5677949 , 13.10313787]
+SP_SPREAD_MEAN = -133.3254401958018
+SP_SPREAD_STD = 1.00
+SP_THRESHOLD = 1.2
+
+################ PEBBLES ###########################
+
+P_BETA = [18.5541452 ,  3.13788003, -6.4503152 ]
+P_SPREAD_MEAN = 141.10941049216513
+P_SPREAD_STD = 1.00
+P_THRESHOLD = 1.5
+
+############ SNACKPACK ####################
+
+SNACKPACK_BETA = [148.80325814, -30.6227267 , -29.35608255,  29.80545624, 110.53788623]
+SNACKPACK_SPREAD_MEAN = 2112.7705132541355
+SNACKPACK_SPREAD_STD = 1.00
+SNACKPACK_THRESHOLD = 1.5
+
+# ---------------------------------------------
+################### PAIRS #####################
+# ---------------------------------------------
 
 ############### PSR ############### 
 
@@ -117,26 +213,40 @@ VC_BETA = -0.7979115826032864
 VC_SPREAD_STD = 0.006755144417558233
 VC_THRESHOLD = 1.0
 
-############### PEBBLE ###############
+############### MICROCHIP SR ###############
 
-PEBBLES_BETA = [26.28024559,  2.94634034, 32.19080164, 19.19052495, 27.36364919]
-PEBBLES_SPREAD_MEAN = 994.1706388773875
-PEBBLES_SPREAD_STD = 1.001673170987763
-PEBBLES_THRESHOLD = 3.0
+MC_SR_ALPHA = 14.12013720211347
+MC_SR_BETA = -0.5310378074106424
+MC_SR_SPREAD_STD = 0.041064546822360985
+MC_SR_THRESHOLD = 1.5
 
-############### TRANSLATOR ###############
+############### XLS ###############
 
-TRANSLATOR_BETA = [16.25250433, -25.06013879,   2.63142257,  13.14531716, 28.91675378]
-TRANSLATOR_SPREAD_MEAN = 331.526249336317
-TRANSLATOR_SPREAD_STD = 1.0034714623065943
-TRANSLATOR_THRESHOLD = 2
+XLS_ALPHA = 20.046814838632574
+XLS_BETA = -1.1620345624315502
+XLS_SPREAD_STD = 0.08139014676398257
+XLS_THRESHOLD = 1.5
 
-############### MICROCHIP ###############
+############## SPSP ##################
 
-MICROCHIP_BETA = [16.34572941, -13.59596011, -31.82337302]
-MICROCHIP_SPREAD_MEAN = -268.3509747533391
-MICROCHIP_SPREAD_STD = 1.0003801297138426
-MICROCHIP_THRESHOLD = 1.5
+SP_PS_ALPHA = 1.00
+SP_PS_BETA = 0.8966634571296795
+SP_PS_SPREAD_STD = 0.042500341857436744
+SP_PS_THRESHOLD = 1.5
+
+################# RVI ################
+
+R_VI_ALPHA = 4.426698507726565
+R_VI_BETA = 0.5177892335261596
+R_VI_SPREAD_STD = 0.035195973627684174
+R_VI_THRESHOLD = 1.0
+
+############## PANELS ######################
+
+PANEL_ALPHA = 13.684655128137374
+PANEL_BETA = -0.5008962559589548
+PANEL_SPREAD_STD = 0.05610591832106225
+PANEL_THRESHOLD = 2
 
 # This is the base ProductTrader class that has all the commonly used utility attributes and methods already implemented for individual traders
 class ProductTrader:
@@ -304,43 +414,150 @@ class PSRTrader:
 
         return orders
     
-class VCTrader:
-    def __init__(self, state, prints, new_trader_data):
-        self.vanilla = ProductTrader("SNACKPACK_VANILLA", state, prints, new_trader_data)
-        self.chocolate = ProductTrader("SNACKPACK_CHOCOLATE", state, prints, new_trader_data)
-        
+class PairsTrader:
+    """
+    Z-spread pair/basket trader using a fixed regression:
+        log(legs[0].mid) ~ alpha + beta * log(legs[1].mid)
+        z = (log(y_mid) - alpha - beta * log(x_mid)) / spread_std
+
+    Each leg has a `side` (+1 / -1) describing its direction at z > +threshold:
+        side=+1 → ask; side=-1 → bid. Signs flip at z < -threshold.
+
+    legs[0] is the lead: its volume gates entry, its position drives flatten.
+    flatten=True closes every leg at |initial_position| once the spread fully
+    mean-reverts (z crosses 0 against the open lead position).
+    """
+
+    def __init__(self, state, prints, new_trader_data, *,
+                 legs, alpha, beta, spread_std, threshold, flatten=True):
         self.state = state
         self.new_trader_data = new_trader_data
+        self.threshold = threshold
+        self.flatten = flatten
 
-        self.z_spread = self.calculate_z_spread()
+        self.legs = [
+            {'pt': ProductTrader(leg['symbol'], state, prints, new_trader_data),
+             'side': leg['side']}
+            for leg in legs
+        ]
+        self.lead = self.legs[0]
 
-    def calculate_z_spread(self):
-        vanilla_pred = VC_ALPHA + VC_BETA * np.log(self.chocolate.wall_mid)
-        raw_spread = np.log(self.vanilla.wall_mid) - vanilla_pred
-        z_spread = raw_spread / VC_SPREAD_STD
-        return z_spread
-    
+        y_mid = self.legs[0]['pt'].wall_mid
+        x_mid = self.legs[1]['pt'].wall_mid
+        y_pred = alpha + beta * np.log(x_mid)
+        self.z_spread = (np.log(y_mid) - y_pred) / spread_std
+
+    @staticmethod
+    def _do_ask(entry_sign, side):
+        return (entry_sign * side) > 0
+
+    def _entry_volume(self, entry_sign):
+        lead_pt = self.lead['pt']
+        if self._do_ask(entry_sign, self.lead['side']):
+            return lead_pt.max_allowed_sell_volume
+        return lead_pt.max_allowed_buy_volume
+
+    def _trade(self, entry_sign, use_initial_position=False):
+        for leg in self.legs:
+            pt = leg['pt']
+            do_ask = self._do_ask(entry_sign, leg['side'])
+            if use_initial_position:
+                vol = abs(pt.initial_position)
+            else:
+                vol = pt.max_allowed_sell_volume if do_ask else pt.max_allowed_buy_volume
+            if do_ask:
+                pt.ask(pt.bid_wall, vol)
+            else:
+                pt.bid(pt.ask_wall, vol)
+
     def get_orders(self):
-        v = self.vanilla
-        c = self.chocolate
+        z = self.z_spread
 
-        orders = {}
+        if z > self.threshold and self._entry_volume(+1) > 0:
+            self._trade(+1)
+        elif z < -self.threshold and self._entry_volume(-1) > 0:
+            self._trade(-1)
+        elif self.flatten:
+            lead_pos = self.lead['pt'].initial_position
+            lead_side = self.lead['side']
+            # lead_pos>0 came from entry at z<-T → close on full reversion (z>=0)
+            # lead_pos<0 came from entry at z>+T → close on full reversion (z<=0)
+            if lead_pos > 0 and z >= 0:
+                self._trade(lead_side, use_initial_position=True)
+            elif lead_pos < 0 and z <= 0:
+                self._trade(-lead_side, use_initial_position=True)
 
-        if self.z_spread > VC_THRESHOLD and v.max_allowed_sell_volume > 0:
-            v.ask(v.bid_wall, v.max_allowed_sell_volume)
-            c.bid(c.ask_wall, c.max_allowed_buy_volume)
-            
-        elif self.z_spread < -VC_THRESHOLD and v.max_allowed_buy_volume > 0:
-            v.bid(v.ask_wall, v.max_allowed_buy_volume)
-            c.ask(c.bid_wall, c.max_allowed_sell_volume)
+        return {l['pt'].name: l['pt'].orders for l in self.legs}
 
-        orders.update({v.name: v.orders, c.name: c.orders})
 
-        return orders
-    
+class VCTrader(PairsTrader):
+    def __init__(self, state, prints, new_trader_data):
+        super().__init__(state, prints, new_trader_data,
+            legs=[
+                {'symbol': 'SNACKPACK_VANILLA',   'side': +1},
+                {'symbol': 'SNACKPACK_CHOCOLATE', 'side': -1},
+            ],
+            alpha=VC_ALPHA, beta=VC_BETA, spread_std=VC_SPREAD_STD,
+            threshold=VC_THRESHOLD, flatten=True)
+
+
+class MicrochipSRTrader(PairsTrader):
+    def __init__(self, state, prints, new_trader_data):
+        super().__init__(state, prints, new_trader_data,
+            legs=[
+                {'symbol': 'MICROCHIP_RECTANGLE', 'side': +1},
+                {'symbol': 'MICROCHIP_SQUARE',    'side': +1},
+            ],
+            alpha=MC_SR_ALPHA, beta=MC_SR_BETA, spread_std=MC_SR_SPREAD_STD,
+            threshold=MC_SR_THRESHOLD, flatten=True)
+
+
+class XLSTrader(PairsTrader):
+    def __init__(self, state, prints, new_trader_data):
+        super().__init__(state, prints, new_trader_data,
+            legs=[
+                {'symbol': 'PEBBLES_XL', 'side': +1},
+                {'symbol': 'PEBBLES_S',  'side': +1},
+            ],
+            alpha=XLS_ALPHA, beta=XLS_BETA, spread_std=XLS_SPREAD_STD,
+            threshold=XLS_THRESHOLD, flatten=True)
+
+
+class SPPSTrader(PairsTrader):
+    def __init__(self, state, prints, new_trader_data):
+        super().__init__(state, prints, new_trader_data,
+            legs=[
+                {'symbol': 'SLEEP_POD_POLYESTER', 'side': +1},
+                {'symbol': 'SLEEP_POD_SUEDE',     'side': -1},
+            ],
+            alpha=SP_PS_ALPHA, beta=SP_PS_BETA, spread_std=SP_PS_SPREAD_STD,
+            threshold=SP_PS_THRESHOLD, flatten=True)
+
+
+class RVITrader(PairsTrader):
+    def __init__(self, state, prints, new_trader_data):
+        super().__init__(state, prints, new_trader_data,
+            legs=[
+                {'symbol': 'ROBOT_VACUUMING', 'side': +1},
+                {'symbol': 'ROBOT_IRONING',   'side': -1},
+            ],
+            alpha=R_VI_ALPHA, beta=R_VI_BETA, spread_std=R_VI_SPREAD_STD,
+            threshold=R_VI_THRESHOLD, flatten=True)
+        
+class PanelPairTrader(PairsTrader):
+    def __init__(self, state, prints, new_trader_data):
+        super().__init__(state, prints, new_trader_data,
+            legs=[
+                {'symbol': 'PANEL_1X2', 'side': +1},
+                {'symbol': 'PANEL_2X2',   'side': -1},
+            ],
+            alpha=PANEL_ALPHA, beta=PANEL_BETA, spread_std=PANEL_SPREAD_STD,
+            threshold=PANEL_THRESHOLD, flatten=True)
+
+
 class BasketTrader:
     """
-    Generic linear-basket mean-reversion trader.
+    Generic linear-basket mean-reversion trader with rolling-window stats.
 
     legs: list of dicts with keys
         symbol: product symbol
@@ -357,29 +574,60 @@ class BasketTrader:
     flatten: if True, when no entry fires and the lead carries a position
              whose sign disagrees with z, close every traded leg at its
              own |initial_position|.
+
+    Rolling stats:
+        Each timestep appends the current `beta · wall_mids` raw spread to a
+        per-basket history kept in state.traderData under `key`. The history
+        is trimmed to `window` samples; rolling mean/std are computed from
+        it. Trading is skipped until the history has `min_samples` entries.
     """
 
     def __init__(self, state, prints, new_trader_data, *, legs,
-                 beta, spread_mean, spread_std, threshold, flatten=False):
+                 beta, threshold, window, key, min_samples=None,
+                 flatten=False):
+        self.state = state
+        self.new_trader_data = new_trader_data
+
         self.legs = []
         for leg in legs:
             pt = ProductTrader(leg['symbol'], state, prints, new_trader_data)
             self.legs.append({'pt': pt, 'side': leg['side'], 'vol': leg.get('vol', 'self')})
 
         self.beta = np.asarray(beta)
-        self.spread_mean = spread_mean
-        self.spread_std = spread_std
         self.threshold = threshold
+        self.window = window
+        self.key = key
+        self.min_samples = window if min_samples is None else min_samples
         self.flatten = flatten
 
         self.lead = next(l for l in self.legs if l['side'] != 0 and l['vol'] == 'self')
 
-        self.z_spread = self.calculate_z_spread()
+        self.raw_spread = self._raw_spread()
+        self.history = self._update_history(self.raw_spread)
 
-    def calculate_z_spread(self):
-        y = np.array([l['pt'].wall_mid for l in self.legs])
-        raw_spread = y @ self.beta
-        return (raw_spread - self.spread_mean) / self.spread_std
+        if len(self.history) >= self.min_samples:
+            arr = np.asarray(self.history)
+            self.spread_mean = float(arr.mean())
+            std = float(arr.std())
+            self.spread_std = std if std > 0 else 1.0
+            self.z_spread = (self.raw_spread - self.spread_mean) / self.spread_std
+        else:
+            self.spread_mean = None
+            self.spread_std = None
+            self.z_spread = None
+
+    def _raw_spread(self):
+        y = np.log([l['pt'].wall_mid for l in self.legs])
+        return float(y @ self.beta)
+
+    def _update_history(self, sample):
+        prev = self.lead['pt'].last_traderData
+        history = list(prev.get(self.key, [])) if isinstance(prev, dict) else []
+        history.append(float(sample))
+        if len(history) > self.window:
+            history = history[-self.window:]
+        self.new_trader_data[self.key] = history
+        return history
 
     @staticmethod
     def _do_ask(sign, side):
@@ -415,6 +663,10 @@ class BasketTrader:
     def get_orders(self):
         z = self.z_spread
 
+        if z is None:
+            # Warming up rolling-stats window; persist history but no trades.
+            return {l['pt'].name: l['pt'].orders for l in self.legs if l['side'] != 0}
+
         if z > self.threshold and self._lead_entry_vol(+1) > 0:
             self._trade(+1)
         elif z < -self.threshold and self._lead_entry_vol(-1) > 0:
@@ -432,47 +684,183 @@ class BasketTrader:
         return {l['pt'].name: l['pt'].orders for l in self.legs if l['side'] != 0}
 
 
-class PebblesTrader(BasketTrader):
+class StaticBasketTrader:
+    """
+    Generic linear-basket mean-reversion trader with static spread mean & std.
+
+    Spread is computed from log prices:
+        raw_spread = beta · log(wall_mids)
+        z          = (raw_spread - spread_mean) / spread_std
+
+    legs: list of dicts with keys
+        symbol: product symbol
+        side:   +1 / 0 / -1
+                When z > +threshold we trade `side`: +1 → ask, -1 → bid, 0 → skip.
+                When z < -threshold the directions flip.
+        vol:    'self' (default) or float scale.
+                'self'  -> use this leg's own max_allowed_{buy,sell}_volume.
+                float k -> use k * lead's volume in the entry direction.
+
+    The lead leg is the first leg with side != 0 and vol == 'self'; its
+    volume gates entry and serves as the base for scaled legs.
+
+    flatten: if True, when no entry fires and the lead carries a position
+             whose sign disagrees with z, close every traded leg at its
+             own |initial_position|.
+    """
+
+    def __init__(self, state, prints, new_trader_data, *, legs,
+                 beta, spread_mean, spread_std, threshold, flatten=False):
+        self.state = state
+        self.new_trader_data = new_trader_data
+
+        self.legs = []
+        for leg in legs:
+            pt = ProductTrader(leg['symbol'], state, prints, new_trader_data)
+            self.legs.append({'pt': pt, 'side': leg['side'], 'vol': leg.get('vol', 'self')})
+
+        self.beta = np.asarray(beta)
+        self.spread_mean = float(spread_mean)
+        self.spread_std = float(spread_std) if spread_std > 0 else 1.0
+        self.threshold = threshold
+        self.flatten = flatten
+
+        self.lead = next(l for l in self.legs if l['side'] != 0 and l['vol'] == 'self')
+
+        self.raw_spread = self._raw_spread()
+        self.z_spread = (self.raw_spread - self.spread_mean) / self.spread_std
+
+    def _raw_spread(self):
+        y = np.log([l['pt'].wall_mid for l in self.legs])
+        return float(y @ self.beta)
+
+    @staticmethod
+    def _do_ask(sign, side):
+        return (sign * side) > 0
+
+    def _lead_entry_vol(self, sign):
+        lead_pt = self.lead['pt']
+        if self._do_ask(sign, self.lead['side']):
+            return lead_pt.max_allowed_sell_volume
+        return lead_pt.max_allowed_buy_volume
+
+    def _trade(self, sign, use_initial_position=False):
+        lead_base = (abs(self.lead['pt'].initial_position)
+                     if use_initial_position else self._lead_entry_vol(sign))
+
+        for leg in self.legs:
+            if leg['side'] == 0:
+                continue
+            pt = leg['pt']
+            do_ask = self._do_ask(sign, leg['side'])
+            if leg['vol'] == 'self':
+                if use_initial_position:
+                    vol = abs(pt.initial_position)
+                else:
+                    vol = pt.max_allowed_sell_volume if do_ask else pt.max_allowed_buy_volume
+            else:
+                vol = int(leg['vol'] * lead_base)
+            if do_ask:
+                pt.ask(pt.bid_wall, vol)
+            else:
+                pt.bid(pt.ask_wall, vol)
+
+    def get_orders(self):
+        z = self.z_spread
+
+        if z > self.threshold:
+            if self._lead_entry_vol(+1) > 0:
+                self._trade(+1)
+        elif z < -self.threshold:
+            if self._lead_entry_vol(-1) > 0:
+                self._trade(-1)
+        elif self.flatten:
+            lead_pos = self.lead['pt'].initial_position
+            lead_side = self.lead['side']
+            # Close on full mean reversion (z crosses 0 from the entry side).
+            # lead_pos>0 came from entry at z<-T → close on z>=0.
+            # lead_pos<0 came from entry at z>+T → close on z<=0.
+            if lead_pos > 0 and z >= 0:
+                self._trade(lead_side, use_initial_position=True)
+            elif lead_pos < 0 and z <= 0:
+                self._trade(-lead_side, use_initial_position=True)
+
+        return {l['pt'].name: l['pt'].orders for l in self.legs if l['side'] != 0}
+
+class TranslatorTrader(StaticBasketTrader):
     def __init__(self, state, prints, new_trader_data):
         super().__init__(state, prints, new_trader_data,
             legs=[
-                {'symbol': 'PEBBLES_XS', 'side': +1},
-                {'symbol': 'PEBBLES_S',  'side': +1},
-                {'symbol': 'PEBBLES_M',  'side':  0},
-                {'symbol': 'PEBBLES_L',  'side':  0},
-                {'symbol': 'PEBBLES_XL', 'side': -1},
-            ],
-            beta=PEBBLES_BETA,
-            spread_mean=PEBBLES_SPREAD_MEAN,
-            spread_std=PEBBLES_SPREAD_STD,
-            threshold=PEBBLES_THRESHOLD,
-        )
-
-
-class TranslatorTrader(BasketTrader):
-    def __init__(self, state, prints, new_trader_data):
-        super().__init__(state, prints, new_trader_data,
-            legs=[
-                {'symbol': 'TRANSLATOR_ASTRO_BLACK',       'side': +1},
+                {'symbol': 'TRANSLATOR_ASTRO_BLACK',       'side': 1},
                 {'symbol': 'TRANSLATOR_ECLIPSE_CHARCOAL',  'side': -1},
-                {'symbol': 'TRANSLATOR_GRAPHITE_MIST',     'side': +1},
-                {'symbol': 'TRANSLATOR_SPACE_GRAY',        'side': +1},
-                {'symbol': 'TRANSLATOR_VOID_BLUE',         'side': +1},
+                {'symbol': 'TRANSLATOR_SPACE_GRAY',        'side': 1},
+                {'symbol': 'TRANSLATOR_VOID_BLUE',         'side': 1},
             ],
             beta=TRANSLATOR_BETA,
             spread_mean=TRANSLATOR_SPREAD_MEAN,
             spread_std=TRANSLATOR_SPREAD_STD,
             threshold=TRANSLATOR_THRESHOLD,
+            flatten=True,
         )
 
-
-class MicrochipTrader(BasketTrader):
+class GSTrader(StaticBasketTrader):
     def __init__(self, state, prints, new_trader_data):
         super().__init__(state, prints, new_trader_data,
             legs=[
-                {'symbol': 'MICROCHIP_OVAL',      'side': +1, 'vol': 0.5},
-                {'symbol': 'MICROCHIP_RECTANGLE', 'side': +1, 'vol': 0.4},
-                {'symbol': 'MICROCHIP_TRIANGLE',  'side': -1},
+                {'symbol': 'GALAXY_SOUNDS_BLACK_HOLES',         'side': 0},
+                {'symbol': 'GALAXY_SOUNDS_DARK_MATTER',         'side': 1},
+                {'symbol': 'GALAXY_SOUNDS_PLANETARY_RINGS',     'side': -1},
+                {'symbol': 'GALAXY_SOUNDS_SOLAR_FLAMES',        'side': 1},
+                {'symbol': 'GALAXY_SOUNDS_SOLAR_WINDS',         'side': 1},
+            ],
+            beta=GS_BETA,
+            spread_mean=GS_SPREAD_MEAN,
+            spread_std=GS_SPREAD_STD,
+            threshold=GS_THRESHOLD,
+            flatten=True,
+        )
+
+class UVTrader(StaticBasketTrader):
+    def __init__(self, state, prints, new_trader_data):
+        super().__init__(state, prints, new_trader_data,
+            legs=[
+                {'symbol': 'UV_VISOR_AMBER',         'side': 0},
+                {'symbol': 'UV_VISOR_MAGENTA',         'side': 1},
+                {'symbol': 'UV_VISOR_ORANGE',     'side': 1},
+                {'symbol': 'UV_VISOR_RED',        'side': 1},
+                {'symbol': 'UV_VISOR_YELLOW',         'side': 1},
+            ],
+            beta=UV_BETA,
+            spread_mean=UV_SPREAD_MEAN,
+            spread_std=UV_SPREAD_STD,
+            threshold=UV_THRESHOLD,
+            flatten=True,
+        )
+
+class OSTrader(StaticBasketTrader):
+    def __init__(self, state, prints, new_trader_data):
+        super().__init__(state, prints, new_trader_data,
+            legs=[
+                {'symbol': 'OXYGEN_SHAKE_CHOCOLATE',                 'side': 1},
+                {'symbol': 'OXYGEN_SHAKE_EVENING_BREATH',         'side': -1},
+                {'symbol': 'OXYGEN_SHAKE_GARLIC',                   'side': -1},
+                {'symbol': 'OXYGEN_SHAKE_MINT',                     'side': 0},
+                {'symbol': 'OXYGEN_SHAKE_MORNING_BREATH',         'side': -1},
+            ],
+            beta=OS_BETA,
+            spread_mean=OS_SPREAD_MEAN,
+            spread_std=OS_SPREAD_STD,
+            threshold=OS_THRESHOLD,
+            flatten=True,
+        )
+
+class MicrochipTrader(StaticBasketTrader):
+    def __init__(self, state, prints, new_trader_data):
+        super().__init__(state, prints, new_trader_data,
+            legs=[
+                {'symbol': 'MICROCHIP_OVAL',                 'side': 1},
+                {'symbol': 'MICROCHIP_RECTANGLE',         'side': -1},
+                {'symbol': 'MICROCHIP_TRIANGLE',                   'side': -1},
             ],
             beta=MICROCHIP_BETA,
             spread_mean=MICROCHIP_SPREAD_MEAN,
@@ -481,98 +869,82 @@ class MicrochipTrader(BasketTrader):
             flatten=True,
         )
 
-
-class MarketMakingTrader:
-    """
-    Single-product market maker following the take → flatten → make pattern.
-
-    Fair value = midpoint of the largest-volume bid and ask in the book
-    (the "walls"), matching the original tomatoes strategy. This differs
-    from ProductTrader.wall_mid, which uses the outermost prices.
-
-    Phases:
-      1. Take    - cross any bid above fair / ask below fair
-      2. Flatten - dump residual position at the fair price
-      3. Make    - post one tick inside top-of-book on each side, only when
-                   the resulting quote stays on the right side of fair
-    """
-
-    SYMBOL = None  # override in subclass
-
+class RobotTrader(StaticBasketTrader):
     def __init__(self, state, prints, new_trader_data):
-        if self.SYMBOL is None:
-            raise ValueError(f"{type(self).__name__} must set SYMBOL")
-        self.pt = ProductTrader(self.SYMBOL, state, prints, new_trader_data)
+        super().__init__(state, prints, new_trader_data,
+            legs=[
+                {'symbol': 'ROBOT_DISHES',                 'side': 1},
+                {'symbol': 'ROBOT_IRONING',         'side': 1},
+                {'symbol': 'ROBOT_LAUNDRY',                   'side': 1},
+                {'symbol': 'ROBOT_MOPPING',                     'side': 0},
+                {'symbol': 'ROBOT_VACUUMING',         'side': 0},
+            ],
+            beta=R_BETA,
+            spread_mean=R_SPREAD_MEAN,
+            spread_std=R_SPREAD_STD,
+            threshold=R_THRESHOLD,
+            flatten=True,
+        )
 
-    def _fair_value(self):
-        pt = self.pt
-        if not pt.mkt_buy_orders or not pt.mkt_sell_orders:
-            return None
-        wall_bid = max(pt.mkt_buy_orders, key=pt.mkt_buy_orders.get)
-        wall_ask = max(pt.mkt_sell_orders, key=pt.mkt_sell_orders.get)
-        return int((wall_bid + wall_ask) / 2)
+class SPTrader(StaticBasketTrader):
+    def __init__(self, state, prints, new_trader_data):
+        super().__init__(state, prints, new_trader_data,
+            legs=[
+                {'symbol': 'SLEEP_POD_COTTON',                 'side': 1},
+                {'symbol': 'SLEEP_POD_LAMB_WOOL',         'side': -1},
+                {'symbol': 'SLEEP_POD_NYLON',                   'side': 0},
+                {'symbol': 'SLEEP_POD_POLYESTER',                     'side': -1},
+                {'symbol': 'SLEEP_POD_SUEDE',         'side': 1},
+            ],
+            beta=SP_BETA,
+            spread_mean=SP_SPREAD_MEAN,
+            spread_std=SP_PS_SPREAD_STD,
+            threshold=SP_THRESHOLD,
+            flatten=True,
+        )
 
-    def get_orders(self):
-        pt = self.pt
-        fair = self._fair_value()
-        if fair is None or pt.best_bid is None or pt.best_ask is None:
-            return {pt.name: pt.orders}
+class PebblesTrader(StaticBasketTrader):
+    def __init__(self, state, prints, new_trader_data):
+        super().__init__(state, prints, new_trader_data,
+            legs=[
+                {'symbol': 'PEBBLES_S',                 'side': 1},
+                {'symbol': 'PEBBLES_XL',         'side': 1},
+                {'symbol': 'PEBBLES_XS',                   'side': -1},
+            ],
+            beta=P_BETA,
+            spread_mean=P_SPREAD_MEAN,
+            spread_std=P_SPREAD_STD,
+            threshold=P_THRESHOLD,
+            flatten=True,
+        )
 
-        limit = pt.position_limit
-        cur_pos = pt.initial_position
-
-        # # Taking
-        # for price, qty in pt.mkt_buy_orders.items():
-        #     if int(price) > fair:
-        #         sell_qty = min(qty, limit + cur_pos)
-        #         if sell_qty > 0:
-        #             pt.ask(price, sell_qty)
-        #             cur_pos -= sell_qty
-
-        # for price, qty in pt.mkt_sell_orders.items():
-        #     if int(price) < fair:
-        #         buy_qty = min(qty, limit - cur_pos)
-        #         if buy_qty > 0:
-        #             pt.bid(price, buy_qty)
-        #             cur_pos += buy_qty
-
-        # # Flattening at fair value
-        # if cur_pos > 0 and fair in pt.mkt_buy_orders:
-        #     sell_qty = min(pt.mkt_buy_orders[fair], cur_pos)
-        #     if sell_qty > 0:
-        #         pt.ask(fair, sell_qty)
-        #         cur_pos -= sell_qty
-        # if cur_pos < 0 and fair in pt.mkt_sell_orders:
-        #     buy_qty = min(pt.mkt_sell_orders[fair], -cur_pos)
-        #     if buy_qty > 0:
-        #         pt.bid(fair, buy_qty)
-        #         cur_pos += buy_qty
-
-        # Making one tick inside top-of-book
-        my_bid = pt.best_bid + 1
-        my_ask = pt.best_ask - 1
-
-        if my_bid < fair:
-            remaining_buy = limit - cur_pos
-            if remaining_buy > 0:
-                pt.bid(my_bid, remaining_buy)
-        if my_ask > fair:
-            remaining_sell = limit + cur_pos
-            if remaining_sell > 0:
-                pt.ask(my_ask, remaining_sell)
-
-        return {pt.name: pt.orders}
-
-
-class MicrochipCircleMM(MarketMakingTrader):
-    SYMBOL = "MICROCHIP_CIRCLE"
-
+class SnackpackTrader(StaticBasketTrader):
+    def __init__(self, state, prints, new_trader_data):
+        super().__init__(state, prints, new_trader_data,
+            legs=[
+                {'symbol': 'SNACKPACK_CHOCOLATE',                 'side': 1},
+                {'symbol': 'SNACKPACK_PISTACHIO',         'side': -1},
+                {'symbol': 'SNACKPACK_RASPBERRY',                   'side': -1},
+                {'symbol': 'SNACKPACK_STRAWBERRY',                     'side': 1},
+                {'symbol': 'SNACKPACK_VANILLA',         'side': 1},
+            ],
+            beta=SNACKPACK_BETA,
+            spread_mean=SNACKPACK_SPREAD_MEAN,
+            spread_std=SNACKPACK_SPREAD_STD,
+            threshold=SNACKPACK_THRESHOLD,
+            flatten=True,
+        )
 
 class Trader:
 
     def run(self, state: TradingState):
         result:dict[str,list[Order]] = {}
-        new_trader_data = {}
+        try:
+            new_trader_data = json.loads(state.traderData) if state.traderData else {}
+            if not isinstance(new_trader_data, dict):
+                new_trader_data = {}
+        except Exception:
+            new_trader_data = {}
         prints = {
             "GENERAL": {
                 "TIMESTAMP": state.timestamp,
@@ -586,11 +958,23 @@ class Trader:
 
 
         product_traders = {
-            # SNACKPACK_PSR_SYMBOLS[0]: PSRTrader,
-            # SNACKPACK_VC_SYMBOLS[0]: VCTrader,
-            # PEBBLES_SYMBOLS[0]: PebblesTrader,
-            # TRANSLATOR_SYMBOLS[0]: TranslatorTrader,
-            MicrochipCircleMM.SYMBOL: MicrochipCircleMM
+            TRANSLATOR_SYMBOLS[0]: TranslatorTrader,
+            GALAXY_SYMBOLS[0]: GSTrader,
+            UV_VISOR_SYMBOLS[0]: UVTrader,
+            OXYGEN_SHAKE_SYMBOLS[0]: OSTrader,
+            MICROCHIP_SYMBOLS[0]: MicrochipTrader,
+            ROBOT_SYMBOLS[0]: RobotTrader,
+            # -- Obsolete SNACKPACK_SYMBOLS[0]: SnackpackTrader,
+            # -- Obsolete PEBBLES_SYMBOLS[0]: PebblesTrader,
+            # -- Obsolete SLEEP_POD_SYMBOLS[0]: SPTrader,
+
+            SNACKPACK_PSR_SYMBOLS[0]: PSRTrader,
+            SNACKPACK_VC_SYMBOLS[0]: VCTrader,
+            # -- Obsolete MC_SR_SYMBOLS[0]: MicrochipSRTrader,
+            XLS_SYMBOLS[0]: XLSTrader,
+            SPPS_SYMBOLS[0]: SPPSTrader,
+            PANEL_PAIR_SYMBOLS[0]: PanelPairTrader,
+            # - Obsolete R_VI_SYMBOLS[0]: RVITrader,
         }
 
         result, conversions = {}, 0
